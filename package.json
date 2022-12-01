@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Reimplementation of mqtt panel in react",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
+    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production && cp -v -r dist /home/niklas/Repository/grafana/data/plugins",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --maxWorkers 4",
@@ -12,7 +12,8 @@
     "lint:fix": "yarn lint --fix",
     "e2e": "yarn cypress install && yarn grafana-e2e run",
     "e2e:update": "yarn cypress install && yarn grafana-e2e run --update-screenshots",
-    "server": "docker-compose up --build"
+    "server": "docker-compose up --build",
+    "prettier-fix": "prettier --write ."
   },
   "author": "Tricera energy",
   "license": "Apache-2.0",
@@ -52,8 +53,8 @@
     "sass-loader": "13.2.0",
     "style-loader": "3.3.1",
     "swc-loader": "^0.2.3",
-    "tsconfig-paths": "^4.1.0",
     "ts-node": "^10.5.0",
+    "tsconfig-paths": "^4.1.0",
     "typescript": "^4.4.0",
     "webpack": "^5.69.1",
     "webpack-cli": "^4.9.2",
@@ -67,7 +68,16 @@
     "@grafana/data": "9.2.5",
     "@grafana/runtime": "9.2.5",
     "@grafana/ui": "9.2.5",
+    "@types/crypto-js": "^4.1.1",
+    "@types/tinycolor": "^1.1.27",
+    "buffer": "^6.0.3",
+    "crypto-js": "^4.1.1",
+    "mqtt": "^4.3.7",
+    "os-browserify": "^0.3.0",
+    "process": "^0.11.10",
     "react": "17.0.2",
-    "react-dom": "17.0.2"
+    "react-dom": "17.0.2",
+    "tinycolor": "^0.0.1",
+    "url": "^0.11.0"
   }
 }

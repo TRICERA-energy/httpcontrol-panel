@@ -1,40 +1,32 @@
 import { PanelPlugin } from '@grafana/data';
-import { SimpleOptions } from './types';
-import { SimplePanel } from './components/SimplePanel';
+import { MQTTOptions } from './types';
+import { MQTTPanel } from './editors/MQTTPanel';
+import { ConnectionEditor } from 'editors/ConnectionEditor';
+import { GroupEditor } from 'editors/GroupEditor';
 
-export const plugin = new PanelPlugin<SimpleOptions>(SimplePanel).setPanelOptions((builder) => {
+export const plugin = new PanelPlugin<MQTTOptions>(MQTTPanel).setPanelOptions((builder) => {
   return builder
-    .addTextInput({
-      path: 'text',
-      name: 'Simple text option',
-      description: 'Description of panel option',
-      defaultValue: 'Default value of text input option',
-    })
-    .addBooleanSwitch({
-      path: 'showSeriesCount',
-      name: 'Show series counter',
-      defaultValue: false,
-    })
-    .addRadio({
-      path: 'seriesCountSize',
-      defaultValue: 'sm',
-      name: 'Series counter size',
-      settings: {
-        options: [
-          {
-            value: 'sm',
-            label: 'Small',
-          },
-          {
-            value: 'md',
-            label: 'Medium',
-          },
-          {
-            value: 'lg',
-            label: 'Large',
-          },
-        ],
+    .addCustomEditor({
+      id: 'connection',
+      path: 'connection',
+      name: 'Connection',
+      editor: ConnectionEditor,
+      defaultValue: {
+        protocol: 'ws',
+        server: '',
+        port: '',
+        user: '',
+        password: '',
+        subscribe: '',
+        publish: '',
+        client: {},
       },
-      showIf: (config) => config.showSeriesCount,
+    })
+    .addCustomEditor({
+      id: 'groups',
+      path: 'groups',
+      name: 'Groups',
+      editor: GroupEditor,
+      defaultValue: [],
     });
 });

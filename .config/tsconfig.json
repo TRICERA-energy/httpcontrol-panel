@@ -3,7 +3,7 @@
  *
  * In order to extend the configuration follow the steps in .config/README.md
  */
- {
+{
   "compilerOptions": {
     "alwaysStrict": true,
     "declaration": false,

@@ -1,0 +1,140 @@
+import React, { FormEvent, useState } from 'react';
+import { Select, InlineField, Input, SecretInput } from '@grafana/ui';
+import { SelectableValue, StandardEditorProps, toOption } from '@grafana/data';
+import { ConnectionOptions } from 'types';
+import { homedir } from 'os';
+import { AES, enc } from 'crypto-js';
+import { connect, IClientOptions, MqttClient } from 'mqtt';
+
+export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> = ({
+  value,
+  onChange,
+}) => {
+  const [options, setOptions] = useState<ConnectionOptions>(value);
+  const [unsecure, setUnsecure] = useState<string>('');
+  const [connected, setConnected] = useState<boolean>(false);
+  const selectProtocol = ['ws', 'wss'].map(toOption);
+
+  const onProtocolChange = (value: SelectableValue<string>) => {
+    if (value.value === 'ws' || value.value === 'wss') {
+      setOptions({ ...options, protocol: value.value });
+    }
+  };
+
+  type OptionsName = 'server' | 'port' | 'user' | 'subscribe';
+  const onChangeStringOption = (event: FormEvent<HTMLInputElement>, optionsName: OptionsName) => {
+    options[optionsName] = event.currentTarget.value;
+    setOptions({ ...options });
+  };
+
+  const onChangePassword = (event: FormEvent<HTMLInputElement>) => {
+    setOptions({
+      ...options,
+      password: AES.encrypt(event.currentTarget.value, homedir()).toString(),
+    });
+    setUnsecure(event.currentTarget.value);
+  };
+
+  const onResetPassword = () => {
+    setOptions({ ...options, password: '' });
+    setUnsecure('');
+  };
+
+  const onBlur = () => {
+    options.client = connectMQTT();
+    onChange(options);
+    setOptions({ ...options });
+  };
+
+  const connectMQTT = (): MqttClient => {
+    // kill old client
+    if (options.client.end) {
+      options.client.end(true);
+    }
+
+    let optionsMqtt: IClientOptions = {};
+    optionsMqtt.host = options.server;
+    optionsMqtt.port = Number(options.port);
+    optionsMqtt.protocol = options.protocol;
+    if (options.user && options.password) {
+      optionsMqtt.username = options.user;
+      optionsMqtt.password = AES.decrypt(options.password, homedir()).toString(enc.Utf8);
+    }
+
+    let client = connect(optionsMqtt);
+
+    client.on('connectionLost', onConnectionLost);
+    client.on('connect', onConnect);
+    client.subscribe(options.subscribe);
+
+    return client;
+  };
+
+  const onConnectionLost = () => {
+    setConnected(false);
+  };
+
+  const onConnect = () => {
+    setConnected(true);
+  };
+
+  return (
+    <>
+      <InlineField label={'Protocol'} labelWidth={14}>
+        <Select
+          options={selectProtocol}
+          value={options.protocol}
+          onChange={onProtocolChange}
+          onBlur={onBlur}
+        />
+      </InlineField>
+      <InlineField label={'Server'} labelWidth={14}>
+        <Input
+          value={options.server}
+          onChange={(event) => onChangeStringOption(event, 'server')}
+          onBlur={onBlur}
+        />
+      </InlineField>
+      <InlineField label={'Server Port'} labelWidth={14}>
+        <Input
+          value={options.port}
+          onChange={(event) => onChangeStringOption(event, 'port')}
+          onBlur={onBlur}
+        />
+      </InlineField>
+      <InlineField label={'User'} labelWidth={14}>
+        <Input
+          value={options.user}
+          onChange={(event) => onChangeStringOption(event, 'user')}
+          onBlur={onBlur}
+        />
+      </InlineField>
+      <InlineField label={'Password'} labelWidth={14}>
+        <SecretInput
+          isConfigured={false}
+          onReset={onResetPassword}
+          value={unsecure}
+          onChange={onChangePassword}
+          onBlur={onBlur}
+        />
+      </InlineField>
+      <InlineField label={'Subscribe Topic'} labelWidth={14}>
+        <Input
+          value={options.subscribe}
+          onChange={(event) => onChangeStringOption(event, 'subscribe')}
+          onBlur={onBlur}
+        />
+      </InlineField>
+      <InlineField label={'Connected'} labelWidth={14} style={{ alignItems: 'center' }}>
+        <div
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: 50,
+            backgroundColor: connected ? 'green' : 'red',
+          }}
+        />
+      </InlineField>
+    </>
+  );
+};

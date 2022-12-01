@@ -15,5 +15,5 @@ const grafanaESModules = ['ol', 'react-colorful'];
 
 module.exports = {
   nodeModulesToTransform,
-  grafanaESModules
-}
+  grafanaESModules,
+};

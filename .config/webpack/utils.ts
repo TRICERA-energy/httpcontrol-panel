@@ -23,18 +23,20 @@ export function hasReadme() {
 export async function getEntries(): Promise<Record<string, string>> {
   const parent = '..';
   const pluginsJson = await globAsync('**/src/**/plugin.json');
-  
-  const plugins = await Promise.all(pluginsJson.map(pluginJson => {
-    const folder = path.dirname(pluginJson);
-    return globAsync(`${folder}/module.{ts,tsx,js}`);
-  }));
+
+  const plugins = await Promise.all(
+    pluginsJson.map((pluginJson) => {
+      const folder = path.dirname(pluginJson);
+      return globAsync(`${folder}/module.{ts,tsx,js}`);
+    })
+  );
 
   return plugins.reduce((result, modules) => {
     return modules.reduce((result, module) => {
       const pluginPath = path.resolve(path.dirname(module), parent);
       const pluginName = path.basename(pluginPath);
       const entryName = plugins.length > 1 ? `${pluginName}/module` : 'module';
-  
+
       result[entryName] = path.join(parent, module);
       return result;
     }, result);

@@ -10,7 +10,7 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import LiveReloadPlugin from 'webpack-livereload-plugin';
 import path from 'path';
 import ReplaceInFileWebpackPlugin from 'replace-in-file-webpack-plugin';
-import { Configuration } from 'webpack';
+import { Configuration, ProvidePlugin } from 'webpack';
 
 import { getPackageJson, getPluginId, hasReadme, getEntries } from './utils';
 import { SOURCE_DIR, DIST_DIR } from './constants';
@@ -93,7 +93,7 @@ const config = async (env): Promise<Configuration> => ({
       },
       {
         test: /\.css$/,
-        use: ["style-loader", "css-loader"]
+        use: ['style-loader', 'css-loader'],
       },
       {
         exclude: /(node_modules)/,
@@ -185,6 +185,10 @@ const config = async (env): Promise<Configuration> => ({
       extensions: ['.ts', '.tsx'],
       lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
     }),
+    new ProvidePlugin({
+      process: 'process/browser',
+      Buffer: ['buffer', 'Buffer'],
+    }),
     ...(env.development ? [new LiveReloadPlugin()] : []),
   ],
 
@@ -193,6 +197,11 @@ const config = async (env): Promise<Configuration> => ({
     // handle resolving "rootDir" paths
     modules: [path.resolve(process.cwd(), 'src'), 'node_modules'],
     unsafeCache: true,
+    fallback: {
+      os: require.resolve('os-browserify/browser'),
+      url: require.resolve('url/'),
+      buffer: require.resolve('buffer'),
+    },
   },
 });
 
