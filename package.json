@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Reimplementation of mqtt panel in react",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production && cp -v -r dist /home/niklas/Repository/grafana/data/plugins",
+    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --maxWorkers 4",
