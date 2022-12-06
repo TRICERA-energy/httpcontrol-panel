@@ -6,14 +6,14 @@ interface Props {
   onRemove: () => void;
   children: ReactNode;
   isOpen?: boolean;
-  color?: string;
+  color: string;
 }
 
 export function Collapsable({
   label,
   children,
   isOpen = false,
-  color = '#307868',
+  color,
   onRemove,
 }: Props) {
   const [open, setOpen] = useState<boolean>(isOpen);
@@ -21,6 +21,7 @@ export function Collapsable({
   return (
     <div style={{ marginBottom: 20 }}>
       <div
+        onClick={() => setOpen(!open)}
         style={{
           padding: 4,
           display: 'flex',

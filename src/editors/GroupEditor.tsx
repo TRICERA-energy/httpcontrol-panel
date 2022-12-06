@@ -20,7 +20,7 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
   };
 
   const addGroup = () => {
-    groups.push({ name: 'NewGroup', controls: [], color: '#307868' });
+    groups.push({ name: 'NewGroup', controls: [], color: '#006051' });
     setGroups([...groups]);
     onBlur();
   };

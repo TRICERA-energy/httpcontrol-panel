@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PanelProps } from '@grafana/data';
 import { ControlProps, GroupProps, MQTTOptions } from 'types';
 import { Button, InlineField, InlineFieldRow, Switch, Tab, TabContent, TabsBar } from '@grafana/ui';
+import { get } from 'lodash'
 
 interface Props extends PanelProps<MQTTOptions> {}
 interface SwitchState {
@@ -50,7 +51,7 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
               return;
             }
 
-            const value = obj[control.path];
+            const value = get(obj, control.path);
             if (value === undefined) {
               return;
             }
@@ -67,6 +68,7 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
     if (connection.client.on) {
       connection.client.on('message', onMessageMQTT);
     }
+
     return () => {
       if (connection.client.off) {
         connection.client.off('message', onMessageMQTT);
@@ -85,16 +87,16 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
     return switchState[index]?.state ?? false;
   };
 
-  const setState = (keyGroup: number, keyControl: number, value?: boolean): SwitchState => {
+  const setState = (keyGroup: number, keyControl: number, value?: boolean): boolean => {
     const index = findStateIndex(keyGroup, keyControl);
 
     if (index > -1) {
       switchState[index].state = value !== undefined ? value : !switchState[index].state;
+      return switchState[index].state;
     } else {
-      switchState.push({ keyGroup, keyControl, state: value !== undefined ? value : false });
+      switchState.push({ keyGroup, keyControl, state: value !== undefined ? value : true });
+      return switchState[switchState.length - 1].state;
     }
-
-    return switchState[index];
   };
 
   const publishMQTT = (publish: string, value: string) => {

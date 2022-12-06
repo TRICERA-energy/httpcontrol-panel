@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from 'react';
+import React, { FormEvent, useEffect, useState } from 'react';
 import { Select, InlineField, Input, SecretInput } from '@grafana/ui';
 import { SelectableValue, StandardEditorProps, toOption } from '@grafana/data';
 import { ConnectionOptions } from 'types';
@@ -12,8 +12,13 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
 }) => {
   const [options, setOptions] = useState<ConnectionOptions>(value);
   const [unsecure, setUnsecure] = useState<string>('');
-  const [connected, setConnected] = useState<boolean>(false);
+  const [connected, setConnected] = useState<boolean>(options.client?.connected);
   const selectProtocol = ['ws', 'wss'].map(toOption);
+
+  useEffect(() => {
+    onBlur()
+  // eslint-disable-next-line react-hooks/exhaustive-deps  
+  }, [])
 
   const onProtocolChange = (value: SelectableValue<string>) => {
     if (value.value === 'ws' || value.value === 'wss') {
@@ -56,6 +61,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
     optionsMqtt.host = options.server;
     optionsMqtt.port = Number(options.port);
     optionsMqtt.protocol = options.protocol;
+
     if (options.user && options.password) {
       optionsMqtt.username = options.user;
       optionsMqtt.password = AES.decrypt(options.password, homedir()).toString(enc.Utf8);
@@ -63,7 +69,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
 
     let client = connect(optionsMqtt);
 
-    client.on('connectionLost', onConnectionLost);
+    client.on('reconnect', onConnectionLost);
     client.on('connect', onConnect);
     client.subscribe(options.subscribe);
 
