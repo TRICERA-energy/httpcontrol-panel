@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PanelProps } from '@grafana/data';
 import { ControlProps, GroupProps, MQTTOptions } from 'types';
 import { Button, InlineField, InlineFieldRow, Switch, Tab, TabContent, TabsBar } from '@grafana/ui';
-import { get } from 'lodash'
+import { get } from 'lodash';
 
 interface Props extends PanelProps<MQTTOptions> {}
 interface SwitchState {
@@ -15,7 +15,7 @@ interface TabState {
   label: string;
   key: string;
   active: boolean;
-  color: string
+  color: string;
 }
 
 export const MQTTPanel: React.FC<Props> = ({ options }) => {
@@ -74,7 +74,8 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
         connection.client.off('message', onMessageMQTT);
       }
     };
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const findStateIndex = (keyGroup: number, keyControl: number): number => {
     return switchState.findIndex(
@@ -127,7 +128,7 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
               key={tab.key}
               label={tab.label}
               active={tab.active}
-              style={{color: tab.color}}
+              style={{ color: tab.color }}
               onChangeTab={() =>
                 setTabState(tabState.map((tab, idx) => ({ ...tab, active: idx === index })))
               }
@@ -138,61 +139,61 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
       <TabContent>
         {!!groups.length &&
           groups.map((group: GroupProps, keyGroup: number) => {
-            return (
-              <div key={keyGroup}>
-                {tabState[keyGroup] && tabState[keyGroup].active && (
-                  <InlineFieldRow style={{ columnGap: 10, marginTop: 10 }}>
-                    {!!group.controls.length &&
-                      group.controls.map((control: ControlProps, keyControl: number) => {
-                        if (control.type === 'button') {
-                          return (
-                            <Button
-                              style={{
-                                height: 'unset',
-                                backgroundColor: control.color,
-                                justifyContent: 'center',
-                              }}
-                              key={keyControl}
-                              onClick={() => publishMQTT(control.publish, control.values[0])}
-                            >
-                              {control.name}
-                            </Button>
-                          );
-                        } else if (control.type === 'switch') {
-                          return (
-                            <InlineField
-                              key={keyControl}
-                              label={control.name}
-                              style={{
-                                alignItems: 'center',
-                                border: `1px solid ${control.color}`,
-                                padding: 2,
-                                margin: 'unset',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              <Switch
-                                value={getState(keyGroup, keyControl)}
-                                onClick={() =>
-                                  onToggleSwitch(
-                                    control.publish,
-                                    keyGroup,
-                                    keyControl,
-                                    control.values
-                                  )
-                                }
-                              />
-                            </InlineField>
-                          );
-                        } else {
-                          return <></>;
-                        }
-                      })}
-                  </InlineFieldRow>
-                )}
-              </div>
-            );
-          })}
+              return (
+                <div key={keyGroup}>
+                  {tabState[keyGroup] && tabState[keyGroup].active && (
+                    <InlineFieldRow style={{ columnGap: 10, marginTop: 10 }}>
+                      {!!group.controls.length &&
+                        group.controls.map((control: ControlProps, keyControl: number) => {
+                          if (control.type === 'button') {
+                            return (
+                              <Button
+                                style={{
+                                  height: 'unset',
+                                  backgroundColor: control.color,
+                                  justifyContent: 'center',
+                                }}
+                                key={keyControl}
+                                onClick={() => publishMQTT(control.publish, control.values[0])}
+                              >
+                                {control.name}
+                              </Button>
+                            );
+                          } else if (control.type === 'switch') {
+                            return (
+                              <InlineField
+                                key={keyControl}
+                                label={control.name}
+                                style={{
+                                  alignItems: 'center',
+                                  border: `1px solid ${control.color}`,
+                                  padding: 2,
+                                  margin: 'unset',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <Switch
+                                  value={getState(keyGroup, keyControl)}
+                                  onClick={() =>
+                                    onToggleSwitch(
+                                      control.publish,
+                                      keyGroup,
+                                      keyControl,
+                                      control.values
+                                    )
+                                  }
+                                />
+                              </InlineField>
+                            );
+                          } else {
+                            return <></>;
+                          }
+                        })}
+                    </InlineFieldRow>
+                  )}
+                </div>
+              );
+            })}
       </TabContent>
     </>
   );
