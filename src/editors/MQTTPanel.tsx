@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { PanelProps } from '@grafana/data';
 import { ControlProps, GroupProps, MQTTOptions } from 'types';
-import { Button, InlineField, InlineFieldRow, Switch, Tab, TabContent, TabsBar } from '@grafana/ui';
+import { Tab, TabContent, TabsBar } from '@grafana/ui';
 import { get } from 'lodash';
+import { SwitchControl } from 'components/SwitchControl';
+import { ButtonControl } from 'components/ButtonControl';
+import { TextInputControl } from 'components/TextInputControl';
+import { ControlContainer } from 'components/ControlContainer';
 
 interface Props extends PanelProps<MQTTOptions> {}
 interface SwitchState {
@@ -25,13 +29,16 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
   const [switchState, setSwitchState] = useState<SwitchState[]>([]);
   const [tabState, setTabState] = useState<TabState[]>([]);
 
-  useEffect(() => {
-    setTabState([
-      ...groups.map((group: GroupProps, key: number) => {
-        return { label: group.name, key: `Tab-${key}`, active: !key, color: group.color };
-      }),
-    ]);
-  }, [groups]);
+  useEffect(
+    () => {
+      setTabState([
+        ...groups.map((group: GroupProps, key: number) => {
+          return { label: group.name, key: `Tab-${key}`, active: !key, color: group.color };
+        }),
+      ]);
+
+      return () => {}
+    }, [groups]);
 
   useEffect(() => {
     const onMessageMQTT = (topic: string, message: string) => {
@@ -139,61 +146,68 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
       <TabContent>
         {!!groups.length &&
           groups.map((group: GroupProps, keyGroup: number) => {
-              return (
-                <div key={keyGroup}>
-                  {tabState[keyGroup] && tabState[keyGroup].active && (
-                    <InlineFieldRow style={{ columnGap: 10, marginTop: 10 }}>
-                      {!!group.controls.length &&
-                        group.controls.map((control: ControlProps, keyControl: number) => {
-                          if (control.type === 'button') {
-                            return (
-                              <Button
-                                style={{
-                                  height: 'unset',
-                                  backgroundColor: control.color,
-                                  justifyContent: 'center',
-                                }}
-                                key={keyControl}
+            return (
+              <div key={keyGroup}>
+                {tabState[keyGroup] && tabState[keyGroup].active && (
+                  <>
+                    {!!group.controls.length &&
+                      group.controls.map((control: ControlProps, keyControl: number) => {
+                        if (control.type === 'button') {
+                          return (
+                            <ControlContainer
+                              control={control}
+                              key={keyControl}
+                              labelWidth={group.labelWidth}
+                            >
+                              <ButtonControl
+                                control={control}
                                 onClick={() => publishMQTT(control.publish, control.values[0])}
-                              >
-                                {control.name}
-                              </Button>
-                            );
-                          } else if (control.type === 'switch') {
-                            return (
-                              <InlineField
-                                key={keyControl}
-                                label={control.name}
-                                style={{
-                                  alignItems: 'center',
-                                  border: `1px solid ${control.color}`,
-                                  padding: 2,
-                                  margin: 'unset',
-                                  justifyContent: 'center',
-                                }}
-                              >
-                                <Switch
-                                  value={getState(keyGroup, keyControl)}
-                                  onClick={() =>
-                                    onToggleSwitch(
-                                      control.publish,
-                                      keyGroup,
-                                      keyControl,
-                                      control.values
-                                    )
-                                  }
-                                />
-                              </InlineField>
-                            );
-                          } else {
-                            return <></>;
-                          }
-                        })}
-                    </InlineFieldRow>
-                  )}
-                </div>
-              );
-            })}
+                              />
+                            </ControlContainer>
+                          );
+                        } else if (control.type === 'switch') {
+                          return (
+                            <ControlContainer
+                              control={control}
+                              key={keyControl}
+                              labelWidth={group.labelWidth}
+                            >
+                              <SwitchControl
+                                state={getState(keyGroup, keyControl)}
+                                control={control}
+                                onToggle={() =>
+                                  onToggleSwitch(
+                                    control.publish,
+                                    keyGroup,
+                                    keyControl,
+                                    control.values
+                                  )
+                                }
+                              />
+                            </ControlContainer>
+                          );
+                        } else if (control.type === 'input') {
+                          return (
+                            <ControlContainer
+                              control={control}
+                              key={keyControl}
+                              labelWidth={group.labelWidth}
+                            >
+                              <TextInputControl
+                                control={control}
+                                onSend={(value: string) => publishMQTT(control.publish, value)}
+                              />
+                            </ControlContainer>
+                          );
+                        } else {
+                          return <div key={keyControl}></div>;
+                        }
+                      })}
+                  </>
+                )}
+              </div>
+            );
+          })}
       </TabContent>
     </>
   );

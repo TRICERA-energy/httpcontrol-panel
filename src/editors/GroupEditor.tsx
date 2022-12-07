@@ -4,7 +4,7 @@ import { Button, ColorPickerInput, InlineField, Input } from '@grafana/ui';
 import { ControlProps, GroupProps } from 'types';
 import { Control } from 'components/Control';
 import { Collapsable } from 'components/Collapsable';
-import tinycolor from 'tinycolor2'
+import tinycolor from 'tinycolor2';
 
 export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value, onChange }) => {
   const [groups, setGroups] = useState<GroupProps[]>(value);
@@ -20,7 +20,7 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
   };
 
   const addGroup = () => {
-    groups.push({ name: 'NewGroup', controls: [], color: '#006051' });
+    groups.push({ name: 'NewGroup', controls: [], color: '#006051', labelWidth: 10 });
     setGroups([...groups]);
     onBlur();
   };
@@ -38,7 +38,8 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
       publish: '',
       values: ['', ''],
       path: '',
-      color: tinycolor(groups[key].color).lighten(10).toString()
+      color: tinycolor(groups[key].color).lighten(10).toString(),
+      icon: 'circle',
     });
     setGroups([...groups]);
     onBlur();
@@ -52,14 +53,23 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
 
   const onControlChange = (value: ControlProps, keyGroup: number, keyControl: number) => {
     groups[keyGroup].controls[keyControl] = value;
+
+    let width = 10;
+    groups[keyGroup].controls.forEach((control: ControlProps) => {
+      if (width < control.name.length) {
+        width = control.name.length;
+      }
+    });
+    groups[keyGroup].labelWidth = width;
+
     setGroups([...groups]);
     onBlur();
   };
 
   const onColorChange = (color: string, key: number) => {
-    groups[key].color = color
+    groups[key].color = color;
     setGroups([...groups]);
-    onBlur()
+    onBlur();
   };
 
   const onBlur = () => {
@@ -78,14 +88,14 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
               key={keyGroup}
               color={group.color}
             >
-              <InlineField label={'Name'}>
+              <InlineField label={'Name'} labelWidth={10} grow={true}>
                 <Input
                   value={group.name}
                   onChange={(event) => onChangeStringOption(event, keyGroup, 'name')}
                   onBlur={onBlur}
                 ></Input>
               </InlineField>
-              <InlineField label={'Color'} style={{ marginBottom: 10 }}>
+              <InlineField label={'Color'} style={{ marginBottom: 10 }} labelWidth={10} grow={true}>
                 <ColorPickerInput
                   value={group.color}
                   onChange={(color) => onColorChange(color, keyGroup)}

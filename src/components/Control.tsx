@@ -1,8 +1,9 @@
-import React, { FormEvent, useState } from 'react';
-import { SelectableValue, toOption } from '@grafana/data';
-import { ColorPickerInput, InlineField, InlineFieldRow, Input, Select } from '@grafana/ui';
+import React, { FormEvent, useEffect, useState } from 'react';
+import { IconName, SelectableValue, toOption } from '@grafana/data';
+import { ColorPickerInput, InlineField, Input, Select } from '@grafana/ui';
 import { ControlProps } from 'types';
 import { Collapsable } from './Collapsable';
+import { IconPicker } from './IconPicker';
 
 interface Props {
   onChange: (control: ControlProps) => void;
@@ -13,9 +14,13 @@ interface Props {
 export function Control({ value, onChange, onRemove }: Props) {
   const [control, setControl] = useState<ControlProps>(value);
 
-  const selectType = ['button', 'switch'].map(toOption);
+  useEffect(() => {
+    setControl(value);
+  }, [value]);
+
+  const selectType = ['button', 'switch', 'input'].map(toOption);
   const onTypeChange = (value: SelectableValue<string>) => {
-    if (value.value === 'button' || value.value === 'switch') {
+    if (value.value === 'button' || value.value === 'switch' || value.value === 'input') {
       control.type = value.value;
       setControl({ ...control });
     }
@@ -33,9 +38,15 @@ export function Control({ value, onChange, onRemove }: Props) {
   };
 
   const onColorChange = (color: string) => {
-    control.color = color
+    control.color = color;
     setControl({ ...control });
-    onBlur()
+    onBlur();
+  };
+
+  const onIconChange = (icon: IconName) => {
+    control.icon = icon;
+    setControl({ ...control });
+    onBlur();
   };
 
   const onBlur = () => {
@@ -54,61 +65,62 @@ export function Control({ value, onChange, onRemove }: Props) {
       isOpen={true}
       color={control.color}
     >
-      <InlineFieldRow>
-        <InlineField label={'Protocol'} labelWidth={14}>
-          <Select
-            options={selectType}
-            value={control.type}
-            onChange={onTypeChange}
-            onBlur={onBlur}
-          />
+      <InlineField label={'Protocol'} labelWidth={14} grow={true}>
+        <Select options={selectType} value={control.type} onChange={onTypeChange} onBlur={onBlur} />
+      </InlineField>
+      <InlineField label={'Name'} labelWidth={14} grow={true}>
+        <Input
+          value={control.name}
+          onChange={(event) => onChangeStringOption(event, 'name')}
+          onBlur={onBlur}
+        ></Input>
+      </InlineField>
+      <InlineField label={'Color'} labelWidth={14} grow={true}>
+        <ColorPickerInput value={control.color} onChange={onColorChange} />
+      </InlineField>
+      {control.type === 'button' && (
+        <InlineField label={'Icon'} labelWidth={14} grow={true}>
+          <IconPicker icon={control.icon} onChange={onIconChange} />
         </InlineField>
-        <InlineField label={'Name'} labelWidth={14}>
+      )}
+      <InlineField label={'Publish Topic'} labelWidth={14} grow={true}>
+        <Input
+          value={control.publish}
+          onChange={(event) => onChangeStringOption(event, 'publish')}
+          onBlur={onBlur}
+        />
+      </InlineField>
+      {control.type === 'switch' && (
+        <InlineField label={'Listen Path'} labelWidth={14} grow={true}>
           <Input
-            value={control.name}
-            onChange={(event) => onChangeStringOption(event, 'name')}
+            value={control.path}
+            onChange={(event) => onChangeStringOption(event, 'path')}
             onBlur={onBlur}
           ></Input>
         </InlineField>
-        <InlineField label={'Color'} labelWidth={14}>
-          <ColorPickerInput 
-          value={control.color} 
-          onChange={onColorChange}
-          />
-        </InlineField>
-        <InlineField label={'Publish Topic'} labelWidth={14}>
-          <Input
-            value={control.publish}
-            onChange={(event) => onChangeStringOption(event, 'publish')}
-            onBlur={onBlur}
-          />
-        </InlineField>
-        {control.type === 'switch' && (
-          <InlineField label={'Listen Path'} labelWidth={14}>
-            <Input
-              value={control.path}
-              onChange={(event) => onChangeStringOption(event, 'path')}
-              onBlur={onBlur}
-            ></Input>
-          </InlineField>
-        )}
-        <InlineField label={control.type === 'switch' ? 'Value Off' : 'Value'} labelWidth={14}>
+      )}
+      {control.type !== 'input' && (
+        <InlineField
+          label={control.type === 'switch' ? 'Value Off' : 'Value'}
+          labelWidth={14}
+          grow={true}
+        >
           <Input
             value={control.values[0]}
             onChange={(event) => onChangeValue(event, 0)}
             onBlur={onBlur}
           ></Input>
         </InlineField>
-        {control.type === 'switch' && (
-          <InlineField label={'Value On'} labelWidth={14}>
-            <Input
-              value={control.values[1]}
-              onChange={(event) => onChangeValue(event, 1)}
-              onBlur={onBlur}
-            ></Input>
-          </InlineField>
-        )}
-      </InlineFieldRow>
+      )}
+      {control.type === 'switch' && (
+        <InlineField label={'Value On'} labelWidth={14} grow={true}>
+          <Input
+            value={control.values[1]}
+            onChange={(event) => onChangeValue(event, 1)}
+            onBlur={onBlur}
+          ></Input>
+        </InlineField>
+      )}
     </Collapsable>
   );
 }

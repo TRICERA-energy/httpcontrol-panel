@@ -1,5 +1,5 @@
 import React, { FormEvent, useEffect, useState } from 'react';
-import { Select, InlineField, Input, SecretInput } from '@grafana/ui';
+import { Select, InlineField, Input, SecretInput, Icon } from '@grafana/ui';
 import { SelectableValue, StandardEditorProps, toOption } from '@grafana/data';
 import { ConnectionOptions } from 'types';
 import { homedir } from 'os';
@@ -16,9 +16,11 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
   const selectProtocol = ['ws', 'wss'].map(toOption);
 
   useEffect(() => {
-    onBlur()
-  // eslint-disable-next-line react-hooks/exhaustive-deps  
-  }, [])
+    onBlur();
+
+    return () => {};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onProtocolChange = (value: SelectableValue<string>) => {
     if (value.value === 'ws' || value.value === 'wss') {
@@ -86,7 +88,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
 
   return (
     <>
-      <InlineField label={'Protocol'} labelWidth={14}>
+      <InlineField label={'Protocol'} labelWidth={14} grow={true}>
         <Select
           options={selectProtocol}
           value={options.protocol}
@@ -94,28 +96,28 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Server'} labelWidth={14}>
+      <InlineField label={'Server'} labelWidth={14} grow={true}>
         <Input
           value={options.server}
           onChange={(event) => onChangeStringOption(event, 'server')}
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Server Port'} labelWidth={14}>
+      <InlineField label={'Server Port'} labelWidth={14} grow={true}>
         <Input
           value={options.port}
           onChange={(event) => onChangeStringOption(event, 'port')}
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'User'} labelWidth={14}>
+      <InlineField label={'User'} labelWidth={14} grow={true}>
         <Input
           value={options.user}
           onChange={(event) => onChangeStringOption(event, 'user')}
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Password'} labelWidth={14}>
+      <InlineField label={'Password'} labelWidth={14} grow={true}>
         <SecretInput
           isConfigured={false}
           onReset={onResetPassword}
@@ -124,22 +126,15 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Subscribe Topic'} labelWidth={14}>
+      <InlineField label={'Subscribe Topic'} labelWidth={14} grow={true}>
         <Input
           value={options.subscribe}
           onChange={(event) => onChangeStringOption(event, 'subscribe')}
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Connected'} labelWidth={14} style={{ alignItems: 'center' }}>
-        <div
-          style={{
-            width: 14,
-            height: 14,
-            borderRadius: 50,
-            backgroundColor: connected ? 'green' : 'red',
-          }}
-        />
+      <InlineField label={'Connected'} labelWidth={14} style={{ alignItems: 'center' }} grow={true}>
+        <Icon name={connected ? 'check' : 'fa fa-spinner'}/>
       </InlineField>
     </>
   );
