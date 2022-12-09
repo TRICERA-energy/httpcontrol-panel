@@ -88,14 +88,14 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
               key={keyGroup}
               color={group.color}
             >
-              <InlineField label={'Name'} labelWidth={10} grow={true}>
+              <InlineField label={'Name'} labelWidth={14} grow={true}>
                 <Input
                   value={group.name}
                   onChange={(event) => onChangeStringOption(event, keyGroup, 'name')}
                   onBlur={onBlur}
                 ></Input>
               </InlineField>
-              <InlineField label={'Color'} style={{ marginBottom: 10 }} labelWidth={10} grow={true}>
+              <InlineField label={'Color'} style={{ marginBottom: 10 }} labelWidth={14} grow={true}>
                 <ColorPickerInput
                   value={group.color}
                   onChange={(color) => onColorChange(color, keyGroup)}

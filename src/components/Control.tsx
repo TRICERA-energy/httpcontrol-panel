@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useState } from 'react';
 import { IconName, SelectableValue, toOption } from '@grafana/data';
 import { ColorPickerInput, InlineField, Input, Select } from '@grafana/ui';
-import { ControlProps } from 'types';
+import { availableControlIndex, ControlProps, ControlType } from 'types';
 import { Collapsable } from './Collapsable';
 import { IconPicker } from './IconPicker';
 
@@ -18,10 +18,10 @@ export function Control({ value, onChange, onRemove }: Props) {
     setControl(value);
   }, [value]);
 
-  const selectType = ['button', 'switch', 'input'].map(toOption);
+  const selectType = Object.keys(availableControlIndex).map(toOption);
   const onTypeChange = (value: SelectableValue<string>) => {
-    if (value.value === 'button' || value.value === 'switch' || value.value === 'input') {
-      control.type = value.value;
+    if (selectType.some((type) => type.value === value.value)) {
+      control.type = value.value as ControlType;
       setControl({ ...control });
     }
   };
@@ -52,6 +52,20 @@ export function Control({ value, onChange, onRemove }: Props) {
   const onBlur = () => {
     onChange(control);
   };
+
+  const getValueLabel = (type: ControlType, valueIndex: number): string => {
+    switch(type) {
+      case 'slider':
+        return valueIndex > 0 ? 'To' : 'From';
+      case 'switch':
+        return valueIndex > 0 ? 'Value On' : 'Value Off';
+      case 'button':
+      case 'input':
+      default:
+        return 'Value';
+    }
+  }
+
 
   return (
     <Collapsable
@@ -90,7 +104,7 @@ export function Control({ value, onChange, onRemove }: Props) {
           onBlur={onBlur}
         />
       </InlineField>
-      {control.type === 'switch' && (
+      {(control.type === 'switch' || control.type === 'slider') && (
         <InlineField label={'Listen Path'} labelWidth={14} grow={true}>
           <Input
             value={control.path}
@@ -101,7 +115,7 @@ export function Control({ value, onChange, onRemove }: Props) {
       )}
       {control.type !== 'input' && (
         <InlineField
-          label={control.type === 'switch' ? 'Value Off' : 'Value'}
+          label={getValueLabel(control.type, 0)}
           labelWidth={14}
           grow={true}
         >
@@ -112,8 +126,8 @@ export function Control({ value, onChange, onRemove }: Props) {
           ></Input>
         </InlineField>
       )}
-      {control.type === 'switch' && (
-        <InlineField label={'Value On'} labelWidth={14} grow={true}>
+      {(control.type === 'switch' || control.type === 'slider') && (
+        <InlineField label={getValueLabel(control.type, 1)} labelWidth={14} grow={true}>
           <Input
             value={control.values[1]}
             onChange={(event) => onChangeValue(event, 1)}

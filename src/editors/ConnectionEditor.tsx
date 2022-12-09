@@ -1,24 +1,39 @@
 import React, { FormEvent, useEffect, useState } from 'react';
-import { Select, InlineField, Input, SecretInput, Icon } from '@grafana/ui';
+import { Select, InlineField, Input, Icon, IconButton } from '@grafana/ui';
 import { SelectableValue, StandardEditorProps, toOption } from '@grafana/data';
 import { ConnectionOptions } from 'types';
 import { homedir } from 'os';
 import { AES, enc } from 'crypto-js';
-import { connect, IClientOptions, MqttClient } from 'mqtt';
+import { css } from '@emotion/css';
+import { connectMQTT } from 'backend/mqttHandler';
 
 export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> = ({
   value,
   onChange,
 }) => {
   const [options, setOptions] = useState<ConnectionOptions>(value);
-  const [unsecure, setUnsecure] = useState<string>('');
+  const [unsecure, setUnsecure] = useState<string>(
+    AES.decrypt(options.password, homedir()).toString(enc.Utf8)
+  );
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [connected, setConnected] = useState<boolean>(options.client?.connected);
   const selectProtocol = ['ws', 'wss'].map(toOption);
+  const style = getStyle();
 
   useEffect(() => {
     onBlur();
 
-    return () => {};
+    if (options.client.on) {
+      options.client.on('reconnect', onConnectionLost);
+      options.client.on('connect', onConnect);
+    }
+
+    return () => {
+      if (options.client.off) {
+        options.client.off('reconnect', onConnectionLost);
+        options.client.off('connect', onConnect);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -42,40 +57,11 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
     setUnsecure(event.currentTarget.value);
   };
 
-  const onResetPassword = () => {
-    setOptions({ ...options, password: '' });
-    setUnsecure('');
-  };
-
   const onBlur = () => {
-    options.client = connectMQTT();
+    options.client = connectMQTT(options);
+
     onChange(options);
     setOptions({ ...options });
-  };
-
-  const connectMQTT = (): MqttClient => {
-    // kill old client
-    if (options.client.end) {
-      options.client.end(true);
-    }
-
-    let optionsMqtt: IClientOptions = {};
-    optionsMqtt.host = options.server;
-    optionsMqtt.port = Number(options.port);
-    optionsMqtt.protocol = options.protocol;
-
-    if (options.user && options.password) {
-      optionsMqtt.username = options.user;
-      optionsMqtt.password = AES.decrypt(options.password, homedir()).toString(enc.Utf8);
-    }
-
-    let client = connect(optionsMqtt);
-
-    client.on('reconnect', onConnectionLost);
-    client.on('connect', onConnect);
-    client.subscribe(options.subscribe);
-
-    return client;
   };
 
   const onConnectionLost = () => {
@@ -118,13 +104,21 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
         />
       </InlineField>
       <InlineField label={'Password'} labelWidth={14} grow={true}>
-        <SecretInput
-          isConfigured={false}
-          onReset={onResetPassword}
-          value={unsecure}
-          onChange={onChangePassword}
-          onBlur={onBlur}
-        />
+        <div className={style.password}>
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            value={unsecure}
+            onChange={onChangePassword}
+            onBlur={onBlur}
+          />
+          {!!unsecure.length && (
+            <IconButton
+              name={'eye'}
+              onMouseDown={() => setShowPassword(true)}
+              onMouseUp={() => setShowPassword(false)}
+            />
+          )}
+        </div>
       </InlineField>
       <InlineField label={'Subscribe Topic'} labelWidth={14} grow={true}>
         <Input
@@ -133,9 +127,22 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Connected'} labelWidth={14} style={{ alignItems: 'center' }} grow={true}>
-        <Icon name={connected ? 'check' : 'fa fa-spinner'}/>
+      <InlineField label={'Connected'} labelWidth={14} className={style.connected} grow={true}>
+        <Icon name={connected ? 'check' : 'fa fa-spinner'} />
       </InlineField>
     </>
   );
 };
+
+function getStyle() {
+  return {
+    password: css`
+      display: flex;
+      align-items: center;
+      column-gap: 8px;
+    `,
+    connected: css`
+      align-items: center;
+    `,
+  };
+}

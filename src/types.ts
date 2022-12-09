@@ -18,8 +18,17 @@ export interface ConnectionOptions {
   client: MqttClient;
 }
 
+export const availableControlIndex = {
+  'button': true,
+  'switch': true,
+  'input': true,
+  'slider': true,
+}
+
+export type ControlType = keyof typeof availableControlIndex
+
 export interface ControlProps {
-  type: 'button' | 'switch' | 'input';
+  type: ControlType;
   name: string;
   publish: string;
   values: string[];

@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { PanelProps } from '@grafana/data';
 import { ControlProps, GroupProps, MQTTOptions } from 'types';
-import { Tab, TabContent, TabsBar } from '@grafana/ui';
+import { Icon, InlineField, InlineFieldRow, Tab, TabContent, TabsBar } from '@grafana/ui';
 import { get } from 'lodash';
 import { SwitchControl } from 'components/SwitchControl';
 import { ButtonControl } from 'components/ButtonControl';
 import { TextInputControl } from 'components/TextInputControl';
 import { ControlContainer } from 'components/ControlContainer';
+import { SliderControl } from 'components/SliderControl';
+import { css } from '@emotion/css';
+import { connectMQTT } from 'backend/mqttHandler';
 
 interface Props extends PanelProps<MQTTOptions> {}
 interface SwitchState {
   keyGroup: number;
   keyControl: number;
-  state: boolean;
+  stateSwitch?: boolean;
+  stateSlider?: number;
 }
 
 interface TabState {
@@ -22,97 +26,98 @@ interface TabState {
   color: string;
 }
 
-export const MQTTPanel: React.FC<Props> = ({ options }) => {
+export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
   const groups = options.groups;
   const connection = options.connection;
 
-  const [switchState, setSwitchState] = useState<SwitchState[]>([]);
+  const [state, setState] = useState<SwitchState[]>([]);
   const [tabState, setTabState] = useState<TabState[]>([]);
-
-  useEffect(
-    () => {
-      setTabState([
-        ...groups.map((group: GroupProps, key: number) => {
-          return { label: group.name, key: `Tab-${key}`, active: !key, color: group.color };
-        }),
-      ]);
-
-      return () => {}
-    }, [groups]);
+  const [connected, setConnected] = useState<boolean>(false);
+  const style = getStyle();
 
   useEffect(() => {
-    const onMessageMQTT = (topic: string, message: string) => {
-      if (topic !== connection.subscribe) {
-        return;
-      }
+    tryConnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-      if (!message) {
-        return;
-      }
+  useEffect(() => {
+    setTabState([
+      ...groups.map((group: GroupProps, key: number) => {
+        return { label: group.name, key: `Tab-${key}`, active: !key, color: group.color };
+      }),
+    ]);
 
-      try {
-        const obj = JSON.parse(message);
-        groups.forEach((group: GroupProps, keyGroup: number) => {
-          group.controls.forEach((control: ControlProps, keyControl: number) => {
-            if (control.type !== 'switch') {
-              return;
-            }
+    return () => {};
+  }, [groups]);
 
-            const value = get(obj, control.path);
-            if (value === undefined) {
-              return;
-            }
-
-            setState(keyGroup, keyControl, Boolean(value));
-          });
-        });
-        setSwitchState([...switchState]);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
+  useEffect(() => {
     if (connection.client.on) {
       connection.client.on('message', onMessageMQTT);
-    }
+      connection.client.on('reconnect', onConnectionLost);
+      connection.client.on('connect', onConnect);
+      }
 
     return () => {
       if (connection.client.off) {
         connection.client.off('message', onMessageMQTT);
+        connection.client.off('reconnect', onConnectionLost);
+        connection.client.off('connect', onConnect);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [connection]);
 
   const findStateIndex = (keyGroup: number, keyControl: number): number => {
-    return switchState.findIndex(
+    return state.findIndex(
       (state: SwitchState) => state.keyGroup === keyGroup && state.keyControl === keyControl
     );
   };
 
-  const getState = (keyGroup: number, keyControl: number): boolean => {
+  const getSwitchState = (keyGroup: number, keyControl: number): boolean => {
     const index = findStateIndex(keyGroup, keyControl);
-    return switchState[index]?.state ?? false;
+    return state[index]?.stateSwitch ?? false;
   };
 
-  const setState = (keyGroup: number, keyControl: number, value?: boolean): boolean => {
+  const getSliderState = (keyGroup: number, keyControl: number): number => {
+    const index = findStateIndex(keyGroup, keyControl);
+    return state[index]?.stateSlider || Number(groups[keyGroup].controls[keyControl].values[0]);
+  };
+
+  const setSwitchState = (keyGroup: number, keyControl: number, value?: boolean): boolean => {
     const index = findStateIndex(keyGroup, keyControl);
 
     if (index > -1) {
-      switchState[index].state = value !== undefined ? value : !switchState[index].state;
-      return switchState[index].state;
+      state[index].stateSwitch = value !== undefined ? value : !state[index].stateSwitch;
+      return state[index].stateSwitch!;
     } else {
-      switchState.push({ keyGroup, keyControl, state: value !== undefined ? value : true });
-      return switchState[switchState.length - 1].state;
+      state.push({ keyGroup, keyControl, stateSwitch: value !== undefined ? value : true });
+      return state[state.length - 1].stateSwitch!;
+    }
+  };
+
+  const setSliderState = (keyGroup: number, keyControl: number, value?: number) => {
+    const index = findStateIndex(keyGroup, keyControl);
+
+    if (index > -1) {
+      state[index].stateSlider = value !== undefined ? value : state[index].stateSlider;
+    } else {
+      state.push({
+        keyGroup,
+        keyControl,
+        stateSlider:
+          value !== undefined ? value : Number(groups[keyGroup].controls[keyControl].values[0]),
+      });
     }
   };
 
   const publishMQTT = (publish: string, value: string) => {
-    connection.client.publish(publish, value, (error: any) => {
-      if (error) {
-        console.error(error);
-      }
-    });
+    if (publish) {
+      connection.client.publish(publish, value, (error: any) => {
+        if (error) {
+          console.error(error);
+        }
+      });
+    }
   };
 
   const onToggleSwitch = (
@@ -121,13 +126,74 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
     keyControl: number,
     values: string[]
   ) => {
-    const state = setState(keyGroup, keyControl);
-    setSwitchState([...switchState]);
-    publishMQTT(publish, values[state ? 1 : 0]);
+    const newState = setSwitchState(keyGroup, keyControl);
+    setState([...state]);
+    publishMQTT(publish, values[newState ? 1 : 0]);
   };
+
+  const onSliderChange = (publish: string, keyGroup: number, keyControl: number, value: number) => {
+    setSliderState(keyGroup, keyControl, value);
+    setState([...state]);
+    publishMQTT(publish, String(value));
+  };
+
+  const onMessageMQTT = (topic: string, message: string) => {
+    if (topic !== connection.subscribe) {
+      return;
+    }
+
+    if (!message) {
+      return;
+    }
+
+    try {
+      const obj = JSON.parse(message);
+      groups.forEach((group: GroupProps, keyGroup: number) => {
+        group.controls.forEach((control: ControlProps, keyControl: number) => {
+          if (control.type !== 'switch' && control.type !== 'slider') {
+            return;
+          }
+
+          const value = get(obj, control.path);
+          if (value === undefined) {
+            return;
+          }
+
+          if (control.type === 'switch') {
+            setSwitchState(keyGroup, keyControl, Boolean(value));
+            return;
+          }
+          
+          setSliderState(keyGroup, keyControl, Number(value));
+        });
+      });
+      setState([...state]);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onConnectionLost = () => {
+    setConnected(false);
+  };
+
+  const onConnect = () => {
+    console.log('connected')
+    setConnected(true);
+  };
+
+  const tryConnect = () => {
+    connection.client = connectMQTT(connection)
+    onOptionsChange(options)
+  }
 
   return (
     <>
+      <InlineFieldRow>
+        <InlineField label={'Connected'} labelWidth={10} className={style.connected} grow={true}>
+          <Icon name={connected ? 'check' : 'fa fa-spinner'} />
+        </InlineField>
+      </InlineFieldRow>
       <TabsBar>
         {tabState.map((tab, index) => {
           return (
@@ -173,8 +239,7 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
                               labelWidth={group.labelWidth}
                             >
                               <SwitchControl
-                                state={getState(keyGroup, keyControl)}
-                                control={control}
+                                state={getSwitchState(keyGroup, keyControl)}
                                 onToggle={() =>
                                   onToggleSwitch(
                                     control.publish,
@@ -199,6 +264,22 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
                               />
                             </ControlContainer>
                           );
+                        } else if (control.type === 'slider') {
+                          return (
+                            <ControlContainer
+                              control={control}
+                              key={keyControl}
+                              labelWidth={group.labelWidth}
+                            >
+                              <SliderControl
+                                state={getSliderState(keyGroup, keyControl)}
+                                control={control}
+                                onChange={(value: number) =>
+                                  onSliderChange(control.publish, keyGroup, keyControl, value)
+                                }
+                              />
+                            </ControlContainer>
+                          );
                         } else {
                           return <div key={keyControl}></div>;
                         }
@@ -212,3 +293,12 @@ export const MQTTPanel: React.FC<Props> = ({ options }) => {
     </>
   );
 };
+
+function getStyle() {
+  return {
+    connected: css`
+      column-gap: 8xp;
+      align-items: center;
+    `,
+  };
+}
