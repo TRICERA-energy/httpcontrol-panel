@@ -12,6 +12,7 @@
       - [Switch](#switch)
       - [Text Input](#text-input)
       - [Slider](#slider)
+- [Panel](#panel)
 - [Development](#development)
 
 ## Description
@@ -96,6 +97,12 @@ Text input acts like a [Button](#button) control with the difference that you in
 With the slider you can control a number range between *To* and *From* value. Like the [Switch](#switch) it listen to the given *Subscribe Topic* via a valid json path. The value should be number convertable.
 
 ![](/doc/slider.png)
+
+## Panel 
+
+By default the panel contains one `Error` tab which shows the last 200 errors occuried within the panel and a label to show if the panel is still connected to the mqtt broker.
+
+![](/doc/panel.png)
 
 ## Development
 
