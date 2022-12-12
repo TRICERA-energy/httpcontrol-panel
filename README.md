@@ -38,7 +38,7 @@ multiple controllers of type [Button](#button), [Switch](#switch),
 - Load the plugin directly into a grafana container
 
    ```
-   docker run -d -p 3000:3000 -e "GF_INSTALL_PLUGINS=https://github.com/TRICERA-energy/mqtt-panel/releases/download/1.0.0/mqtt-panel-1.0.0.zip;mqtt-panel" --name=grafana grafana/grafana
+   docker run -d -p 3000:3000 -e "GF_INSTALL_PLUGINS=https://github.com/TRICERA-energy/mqtt-panel/releases/download/v1.0.0/triceraenergy-mqtt-panel-1.0.0.zip;mqtt-panel" --name=grafana grafana/grafana
    ```
 
 
