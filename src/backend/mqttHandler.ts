@@ -2,6 +2,7 @@ import { AES, enc } from "crypto-js";
 import { connect, IClientOptions, MqttClient } from "mqtt";
 import { homedir } from "os";
 import { ConnectionOptions } from "types";
+import { setError } from "./errorHandler";
 
 export function connectMQTT (options: ConnectionOptions): MqttClient {
   // kill old client
@@ -21,6 +22,10 @@ export function connectMQTT (options: ConnectionOptions): MqttClient {
 
   let client = connect(optionsMqtt);
   client.subscribe(options.subscribe);
+
+  client.on('error', (error: Error) => {
+    setError({title: 'MQTT Error Event', error: error.toString()})
+  })
 
   return client;
 };

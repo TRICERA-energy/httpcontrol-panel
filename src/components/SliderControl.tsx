@@ -12,28 +12,47 @@ interface Props {
 
 export function SliderControl({ state, control, onChange }: Props) {
   const style = getStyle();
+  const min = Number(control.values[0])
+  const max = Number(control.values[1])
+
   const [text, setText] = useState<string>(String(state));
 
   const onAfterChange = (value: number | number[]) => {
     if (value !== undefined) {
-      const tmpValue = Array.isArray(value) ? value[0] : value;
+      let tmpValue = Array.isArray(value) ? value[0] : value;
+      
+      if (tmpValue < min) {
+        tmpValue = min
+      } else if (tmpValue > max) {
+        tmpValue = max
+      }
+
       setText(String(tmpValue));
       onChange(tmpValue);
     }
   };
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      onAfterChange(Number(event.currentTarget.value))
+    }
+  }
 
   return (
     <div className={style.container}>
       <Slider
         className={style.slider}
         value={state}
-        min={Number(control.values[0])}
-        max={Number(control.values[1])}
+        min={min}
+        max={max}
         onChange={onAfterChange}
       />
       <Input
         className={style.input}
         value={text}
+        type={'number'}
+        onKeyDown={(event) => onKeyDown(event)}
+        onWheel={(value) => onAfterChange(Number(value.currentTarget.value))}
         onChange={(value) => setText(value.currentTarget.value)}
         onBlur={() => onAfterChange(Number(text))}
       />
@@ -81,7 +100,8 @@ function getStyle() {
       }
     `,
     input: css`
-      width: 54px;
+      width: unset;
+
       input {
         text-align: center;
       }

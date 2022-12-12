@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { PanelProps } from '@grafana/data';
 import { ControlProps, GroupProps, MQTTOptions } from 'types';
-import { Icon, InlineField, InlineFieldRow, Tab, TabContent, TabsBar } from '@grafana/ui';
+import {
+  CustomScrollbar,
+  Icon,
+  InlineField,
+  InlineFieldRow,
+  Tab,
+  TabContent,
+  TabsBar,
+} from '@grafana/ui';
 import { get } from 'lodash';
 import { SwitchControl } from 'components/SwitchControl';
 import { ButtonControl } from 'components/ButtonControl';
@@ -10,6 +18,8 @@ import { ControlContainer } from 'components/ControlContainer';
 import { SliderControl } from 'components/SliderControl';
 import { css } from '@emotion/css';
 import { connectMQTT } from 'backend/mqttHandler';
+import { ErrorLog } from 'components/ErrorLog';
+import { setError } from 'backend/errorHandler';
 
 interface Props extends PanelProps<MQTTOptions> {}
 interface SwitchState {
@@ -38,13 +48,14 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
   useEffect(() => {
     tryConnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   useEffect(() => {
     setTabState([
       ...groups.map((group: GroupProps, key: number) => {
         return { label: group.name, key: `Tab-${key}`, active: !key, color: group.color };
       }),
+      { label: 'Errors', key: `Tab-${groups.length}`, active: false, color: 'red' },
     ]);
 
     return () => {};
@@ -55,7 +66,7 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
       connection.client.on('message', onMessageMQTT);
       connection.client.on('reconnect', onConnectionLost);
       connection.client.on('connect', onConnect);
-      }
+    }
 
     return () => {
       if (connection.client.off) {
@@ -112,11 +123,13 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
 
   const publishMQTT = (publish: string, value: string) => {
     if (publish) {
-      connection.client.publish(publish, value, (error: any) => {
+      connection.client.publish(publish, value, (error: Error | undefined) => {
         if (error) {
-          console.error(error);
+          setError({ title: 'Publish', error: error.toString() });
         }
       });
+    } else {
+      setError({ title: 'Publish', error: 'Can not publish to empty topic!' });
     }
   };
 
@@ -163,13 +176,13 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
             setSwitchState(keyGroup, keyControl, Boolean(value));
             return;
           }
-          
+
           setSliderState(keyGroup, keyControl, Number(value));
         });
       });
       setState([...state]);
     } catch (error) {
-      console.error(error);
+      setError({title: 'Subscribe', error: `${error}`})
     }
   };
 
@@ -178,14 +191,13 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
   };
 
   const onConnect = () => {
-    console.log('connected')
     setConnected(true);
   };
 
   const tryConnect = () => {
-    connection.client = connectMQTT(connection)
-    onOptionsChange(options)
-  }
+    connection.client = connectMQTT(connection);
+    onOptionsChange(options);
+  };
 
   return (
     <>
@@ -209,86 +221,90 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
           );
         })}
       </TabsBar>
-      <TabContent>
-        {!!groups.length &&
-          groups.map((group: GroupProps, keyGroup: number) => {
-            return (
-              <div key={keyGroup}>
-                {tabState[keyGroup] && tabState[keyGroup].active && (
-                  <>
-                    {!!group.controls.length &&
-                      group.controls.map((control: ControlProps, keyControl: number) => {
-                        if (control.type === 'button') {
-                          return (
-                            <ControlContainer
-                              control={control}
-                              key={keyControl}
-                              labelWidth={group.labelWidth}
-                            >
-                              <ButtonControl
+      <TabContent className={style.container}>
+        {/* @ts-ignore */}
+        <CustomScrollbar>
+          {!!groups.length &&
+            groups.map((group: GroupProps, keyGroup: number) => {
+              return (
+                <div key={keyGroup}>
+                  {tabState[keyGroup] && tabState[keyGroup].active && (
+                    <>
+                      {!!group.controls.length &&
+                        group.controls.map((control: ControlProps, keyControl: number) => {
+                          if (control.type === 'button') {
+                            return (
+                              <ControlContainer
                                 control={control}
-                                onClick={() => publishMQTT(control.publish, control.values[0])}
-                              />
-                            </ControlContainer>
-                          );
-                        } else if (control.type === 'switch') {
-                          return (
-                            <ControlContainer
-                              control={control}
-                              key={keyControl}
-                              labelWidth={group.labelWidth}
-                            >
-                              <SwitchControl
-                                state={getSwitchState(keyGroup, keyControl)}
-                                onToggle={() =>
-                                  onToggleSwitch(
-                                    control.publish,
-                                    keyGroup,
-                                    keyControl,
-                                    control.values
-                                  )
-                                }
-                              />
-                            </ControlContainer>
-                          );
-                        } else if (control.type === 'input') {
-                          return (
-                            <ControlContainer
-                              control={control}
-                              key={keyControl}
-                              labelWidth={group.labelWidth}
-                            >
-                              <TextInputControl
+                                key={keyControl}
+                                labelWidth={group.labelWidth}
+                              >
+                                <ButtonControl
+                                  control={control}
+                                  onClick={() => publishMQTT(control.publish, control.values[0])}
+                                />
+                              </ControlContainer>
+                            );
+                          } else if (control.type === 'switch') {
+                            return (
+                              <ControlContainer
                                 control={control}
-                                onSend={(value: string) => publishMQTT(control.publish, value)}
-                              />
-                            </ControlContainer>
-                          );
-                        } else if (control.type === 'slider') {
-                          return (
-                            <ControlContainer
-                              control={control}
-                              key={keyControl}
-                              labelWidth={group.labelWidth}
-                            >
-                              <SliderControl
-                                state={getSliderState(keyGroup, keyControl)}
+                                key={keyControl}
+                                labelWidth={group.labelWidth}
+                              >
+                                <SwitchControl
+                                  state={getSwitchState(keyGroup, keyControl)}
+                                  onToggle={() =>
+                                    onToggleSwitch(
+                                      control.publish,
+                                      keyGroup,
+                                      keyControl,
+                                      control.values
+                                    )
+                                  }
+                                />
+                              </ControlContainer>
+                            );
+                          } else if (control.type === 'input') {
+                            return (
+                              <ControlContainer
                                 control={control}
-                                onChange={(value: number) =>
-                                  onSliderChange(control.publish, keyGroup, keyControl, value)
-                                }
-                              />
-                            </ControlContainer>
-                          );
-                        } else {
-                          return <div key={keyControl}></div>;
-                        }
-                      })}
-                  </>
-                )}
-              </div>
-            );
-          })}
+                                key={keyControl}
+                                labelWidth={group.labelWidth}
+                              >
+                                <TextInputControl
+                                  control={control}
+                                  onSend={(value: string) => publishMQTT(control.publish, value)}
+                                />
+                              </ControlContainer>
+                            );
+                          } else if (control.type === 'slider') {
+                            return (
+                              <ControlContainer
+                                control={control}
+                                key={keyControl}
+                                labelWidth={group.labelWidth}
+                              >
+                                <SliderControl
+                                  state={getSliderState(keyGroup, keyControl)}
+                                  control={control}
+                                  onChange={(value: number) =>
+                                    onSliderChange(control.publish, keyGroup, keyControl, value)
+                                  }
+                                />
+                              </ControlContainer>
+                            );
+                          } else {
+                            return <div key={keyControl}></div>;
+                          }
+                        })}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          {tabState[groups.length] && tabState[groups.length].active && <ErrorLog />}
+        </CustomScrollbar>
       </TabContent>
     </>
   );
@@ -296,6 +312,9 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
 
 function getStyle() {
   return {
+    container: css`
+      height: calc(100% - 80px);
+    `,
     connected: css`
       column-gap: 8xp;
       align-items: center;

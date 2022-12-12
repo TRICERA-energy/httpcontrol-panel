@@ -43,3 +43,9 @@ export interface GroupProps {
   color: string;
   labelWidth: number
 }
+
+export interface ErrorProps {
+  title: string;
+  timestamp?: string;
+  error: string;
+}
