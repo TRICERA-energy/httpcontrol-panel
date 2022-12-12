@@ -1,6 +1,6 @@
 {
   "name": "mqtt-panel",
-  "version": "v1.0.0",
+  "version": "1.0.0",
   "description": "Reimplementation and improved grafana mqtt panel (https://github.com/geeks-r-us/mqtt-panel) in react.",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
