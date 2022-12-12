@@ -1,16 +1,103 @@
-# Grafana panel plugin template
+# MQTT Panel
 
-This template is a starting point for building a panel plugin for Grafana.
+## Index
 
-## What are Grafana panel plugins?
+- [Description](#description)
+- [Installation](#installation)
+- [Settings](#settings)
+   - [Connection](#connection)
+   - [Groups](#groups)
+   - [Controls](#controls)
+      - [Button](#button)
+      - [Switch](#switch)
+      - [Text Input](#text-input)
+      - [Slider](#slider)
+- [Development](#development)
 
-Panel plugins allow you to add new types of visualizations to your dashboard, such as maps, clocks, pie charts, lists, and more.
+## Description
 
-Use panel plugins when you want to do things like visualize data returned by data source queries, navigate between dashboards, or control external systems (such as smart home devices).
+This panel plugin allows to publish data to a mqtt broker. 
+It is possible to define multiple groups with 
+multiple controllers of type [Button](#button), [Switch](#switch),
+[Text Input](#text-input) and [Slider](#slider).
 
-## Getting started
+## Installation
 
-### Frontend
+- Via the release binary:
+   
+   Download the latest [Release](https://github.com/TRICERA-energy/mqtt-panel/releases) and unzip it into the grafana plugin folder.
+
+- Build your own binaries:
+
+   You can build the binaries by yourself. 
+   1. Clone this repository to your grafana plugin folder.
+   2. Run `yarn` (Make sure you have nodejs and yarn installed)
+   3. Run `yarn build`
+
+- Load the plugin directly into a grafana container
+
+   ```
+   docker run -d -p 3000:3000 -e "GF_INSTALL_PLUGINS=https://github.com/TRICERA-energy/mqtt-panel/releases/download/1.0.0/mqtt-panel-1.0.0.zip;mqtt-panel" --name=grafana grafana/grafana
+   ```
+
+
+
+## Settings
+### Connection
+
+![](/doc/connection.png)
+
+**Note:** The password is hashed with the home directory to avoid clear password in the panel data. It does not make the panel more safety but avoids to have a clear password.
+
+### Groups
+
+A new group can be added via the `Add Group` button.
+
+![](/doc/group.png)
+
+**Note:** You can't reorder the controls currently in the panel or group settings section. Make sure to add the controls in the order you want.
+
+### Controls
+
+A new control can be added via the `Add Control` button. Beside the *Name*, *Color* and *Publish Topic* each control type has specific settings.
+
+#### Button
+
+The button sends the given *Value* to the given *Publish Topic*. For more customization a icon provided by grafana can be selected.
+
+![](/doc/button.png)
+
+#### Switch
+
+The switch sends the given *Value On* on true and then given *Value Off* on false. Switches also listen to the given *Subscribe Topic* and read there state from given *Listen Path*. This path should be a valid json path and the value should be boolean convertable.
+
+Let's asume with get the following message from the given *Subscribe Topic*:
+
+```json
+{
+   "switch": true,
+   "array": [true, false, false, true]
+}
+```
+
+With a *Listen Path* of `switch` the state would be true.
+With a *Listen Path* of `array[1]` the state would be false.
+
+![](/doc/switch.png)
+
+#### Text Input
+
+Text input acts like a [Button](#button) control with the difference that you insert the message directly in the panel instead in the settings. This allows to send different messages via one button.
+
+![](/doc/text-input.png)
+
+#### Slider
+
+With the slider you can control a number range between *To* and *From* value. Like the [Switch](#switch) it listen to the given *Subscribe Topic* via a valid json path. The value should be number convertable.
+
+![](/doc/slider.png)
+
+## Development
 
 1. Install dependencies
 
@@ -69,11 +156,3 @@ Use panel plugins when you want to do things like visualize data returned by dat
 
    yarn lint:fix
    ```
-
-## Learn more
-
-Below you can find source code for existing app plugins and other related documentation.
-
-- [Basic panel plugin example](https://github.com/grafana/grafana-plugin-examples/tree/master/examples/panel-basic#readme)
-- [Plugin.json documentation](https://grafana.com/docs/grafana/latest/developers/plugins/metadata/)
-- [How to sign a plugin?](https://grafana.com/docs/grafana/latest/developers/plugins/sign-a-plugin/)
