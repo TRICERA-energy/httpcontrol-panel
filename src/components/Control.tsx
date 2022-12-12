@@ -13,6 +13,7 @@ interface Props {
 
 export function Control({ value, onChange, onRemove }: Props) {
   const [control, setControl] = useState<ControlProps>(value);
+  const tooltip = getTooltips()
 
   useEffect(() => {
     setControl(value);
@@ -54,7 +55,7 @@ export function Control({ value, onChange, onRemove }: Props) {
   };
 
   const getValueLabel = (type: ControlType, valueIndex: number): string => {
-    switch(type) {
+    switch (type) {
       case 'slider':
         return valueIndex > 0 ? 'To' : 'From';
       case 'switch':
@@ -64,8 +65,7 @@ export function Control({ value, onChange, onRemove }: Props) {
       default:
         return 'Value';
     }
-  }
-
+  };
 
   return (
     <Collapsable
@@ -79,7 +79,7 @@ export function Control({ value, onChange, onRemove }: Props) {
       isOpen={true}
       color={control.color}
     >
-      <InlineField label={'Protocol'} labelWidth={14} grow={true}>
+      <InlineField label={'Type'} labelWidth={14} grow={true}>
         <Select options={selectType} value={control.type} onChange={onTypeChange} onBlur={onBlur} />
       </InlineField>
       <InlineField label={'Name'} labelWidth={14} grow={true}>
@@ -105,7 +105,7 @@ export function Control({ value, onChange, onRemove }: Props) {
         />
       </InlineField>
       {(control.type === 'switch' || control.type === 'slider') && (
-        <InlineField label={'Listen Path'} labelWidth={14} grow={true}>
+        <InlineField label={'Listen Path'} labelWidth={14} grow={true} tooltip={tooltip.listenPath}>
           <Input
             value={control.path}
             onChange={(event) => onChangeStringOption(event, 'path')}
@@ -114,11 +114,7 @@ export function Control({ value, onChange, onRemove }: Props) {
         </InlineField>
       )}
       {control.type !== 'input' && (
-        <InlineField
-          label={getValueLabel(control.type, 0)}
-          labelWidth={14}
-          grow={true}
-        >
+        <InlineField label={getValueLabel(control.type, 0)} labelWidth={14} grow={true}>
           <Input
             value={control.values[0]}
             onChange={(event) => onChangeValue(event, 0)}
@@ -137,4 +133,45 @@ export function Control({ value, onChange, onRemove }: Props) {
       )}
     </Collapsable>
   );
+}
+
+function getTooltips() {
+  return {
+    listenPath: (
+      <p>
+        A valid path of an json object provided by the subscribe topic.
+        <br></br>
+        <br></br>
+        <b>JSON Value:</b>
+        <pre>
+          <code>
+            {[
+              '{',
+              '  "object": {',
+              '     "switchValue": true,',
+              '     "sliderValue": 50,',
+              '     "array": [0, 1, 2, 3]',
+              '  }',
+              '}',
+            ].join('\n')}
+          </code>
+        </pre>
+        <br></br>
+        <b>Valid Paths:</b>
+          <p>
+            <code>object.switchValue</code>
+            <i>{'=> for a switch control.'}</i>
+          </p>
+          <p>
+            <code>object.sliderValue</code>
+            <i>{'=> for a slider control.'}</i>
+          </p>
+          <p>Explicit array paths are also supported.</p>
+          <p>
+            <code>object.array[1]</code>
+            <i>{'=> for a slider control.'}</i>
+          </p>
+      </p>
+    ),
+  };
 }

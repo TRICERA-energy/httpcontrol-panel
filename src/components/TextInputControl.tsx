@@ -11,17 +11,28 @@ interface Props {
 
 export function TextInputControl({ control, onSend }: Props) {
   const [textInput, setTextInput] = useState<string>('');
-
   const style = getStyle(control.color);
+
+  const onSendText = (text: string) => {
+    onSend(text)
+    setTextInput('')
+  }
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      onSendText(event.currentTarget.value)
+    }
+  }
 
   return (
       <div className={style.container}>
         <Input
           value={textInput}
+          onKeyDown={onKeyDown}
           onChange={(event) => setTextInput(event.currentTarget.value)}
           className={style.input}
         />
-        <ButtonControl control={{...control, icon: 'arrow-right'}} onClick={() => onSend(textInput)} />
+        <ButtonControl control={{...control, icon: 'arrow-right'}} onClick={() => onSendText(textInput)} />
       </div>
   );
 }

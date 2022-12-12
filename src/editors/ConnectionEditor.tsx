@@ -19,6 +19,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
   const [connected, setConnected] = useState<boolean>(options.client?.connected);
   const selectProtocol = ['ws', 'wss'].map(toOption);
   const style = getStyle();
+  const tooltips = getTooltips();
 
   useEffect(() => {
     onBlur();
@@ -82,7 +83,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Server'} labelWidth={14} grow={true}>
+      <InlineField label={'Server'} labelWidth={14} grow={true} tooltip={tooltips.server}>
         <Input
           value={options.server}
           onChange={(event) => onChangeStringOption(event, 'server')}
@@ -103,7 +104,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
           onBlur={onBlur}
         />
       </InlineField>
-      <InlineField label={'Password'} labelWidth={14} grow={true}>
+      <InlineField label={'Password'} labelWidth={14} grow={true} tooltip={tooltips.password}>
         <div className={style.password}>
           <Input
             type={showPassword ? 'text' : 'password'}
@@ -144,5 +145,14 @@ function getStyle() {
     connected: css`
       align-items: center;
     `,
+  };
+}
+
+function getTooltips() {
+  return {
+    server: <p>A valid url like www.host.com or localhost.</p>,
+    password: (
+      <p>Note: The password is hashed with the homedir to not show it in the panel data.</p>
+    ),
   };
 }
