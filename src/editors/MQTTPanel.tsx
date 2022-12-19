@@ -195,7 +195,9 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
   };
 
   const tryConnect = () => {
-    connection.client = connectMQTT(connection);
+    if (connection.server) {
+      connection.client = connectMQTT(connection);
+    }
     onOptionsChange(options);
   };
 

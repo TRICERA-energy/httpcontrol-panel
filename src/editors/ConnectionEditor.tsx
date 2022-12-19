@@ -59,7 +59,9 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
   };
 
   const onBlur = () => {
-    options.client = connectMQTT(options);
+    if (options.server) {
+      options.client = connectMQTT(options);
+    }
 
     onChange(options);
     setOptions({ ...options });

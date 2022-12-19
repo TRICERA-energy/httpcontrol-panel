@@ -11,7 +11,7 @@ export function connectMQTT (options: ConnectionOptions): MqttClient {
   }
 
   let optionsMqtt: IClientOptions = {};
-  optionsMqtt.host = options.server;
+  optionsMqtt.hostname = options.server;
   optionsMqtt.port = Number(options.port);
   optionsMqtt.protocol = options.protocol;
 
