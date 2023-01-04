@@ -14,6 +14,7 @@ export function connectMQTT (options: ConnectionOptions): MqttClient {
   optionsMqtt.hostname = options.server;
   optionsMqtt.port = Number(options.port);
   optionsMqtt.protocol = options.protocol;
+  optionsMqtt.path = '/mqtt'
 
   if (options.user && options.password) {
     optionsMqtt.username = options.user;
