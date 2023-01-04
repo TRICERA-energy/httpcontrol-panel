@@ -17,7 +17,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
   );
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [connected, setConnected] = useState<boolean>(options.client?.connected);
-  const selectProtocol = ['ws', 'wss'].map(toOption);
+  const selectProtocol = ['ws', 'wss', 'mqtt', 'mqtts'].map(toOption);
   const style = getStyle();
   const tooltips = getTooltips();
 
@@ -39,7 +39,12 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionOptions>> 
   }, []);
 
   const onProtocolChange = (value: SelectableValue<string>) => {
-    if (value.value === 'ws' || value.value === 'wss') {
+    if (
+      value.value === 'ws' ||
+      value.value === 'wss' ||
+      value.value === 'mqtt' ||
+      value.value === 'mqtts'
+    ) {
       setOptions({ ...options, protocol: value.value });
     }
   };

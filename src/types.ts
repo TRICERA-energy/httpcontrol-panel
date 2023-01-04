@@ -6,7 +6,7 @@ export interface MQTTOptions {
   groups: GroupProps[];
 }
 
-type Protocol = 'ws' | 'wss';
+type Protocol = 'ws' | 'wss' | 'mqtt' | 'mqtts';
 
 export interface ConnectionOptions {
   protocol: Protocol;
