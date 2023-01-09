@@ -1,5 +1,5 @@
 {
-  "name": "tricera-http-control-panel",
+  "name": "tricera-httpcontrol-panel",
   "version": "1.0.0",
   "description": "Panel to send HTTP post request to a grafana backend api via buttons, switches, textinput or sliders",
   "scripts": {

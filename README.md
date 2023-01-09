@@ -26,7 +26,7 @@ multiple controllers of type [Button](#button), [Switch](#switch),
 
 - Via the release binary:
    
-   Download the latest [Release](https://github.com/TRICERA-energy/http-control-panel/releases) and unzip it into the grafana plugin folder.
+   Download the latest [Release](https://github.com/TRICERA-energy/httpcontrol-panel/releases) and unzip it into the grafana plugin folder.
 
 - Build your own binaries:
 
@@ -38,7 +38,7 @@ multiple controllers of type [Button](#button), [Switch](#switch),
 - Load the plugin directly into a grafana container
 
    ```
-   docker run -d -p 3000:3000 -e "GF_INSTALL_PLUGINS=https://github.com/TRICERA-energy/http-control-panel/releases/download/v1.0.0/triceraenergy-httpcontrol-panel-1.0.0.zip;httpcontrol-panel" --name=grafana grafana/grafana
+   docker run -d -p 3000:3000 -e "GF_INSTALL_PLUGINS=https://github.com/TRICERA-energy/httpcontrol-panel/releases/download/v1.0.0/triceraenergy-httpcontrol-panel-1.0.0.zip;httpcontrol-panel" --name=grafana grafana/grafana
    ```
 
 
