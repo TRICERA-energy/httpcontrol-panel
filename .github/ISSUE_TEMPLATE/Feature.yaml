@@ -1,0 +1,23 @@
+name: New Feature
+title: "[Feature]: "
+description: Create new feature.
+labels: ["backlog", "feature"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: textarea
+    id: possible_solutions
+    attributes:
+      label: Possible solutions
+    validations:
+      required: false
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimated time
+    validations:
+      required: false

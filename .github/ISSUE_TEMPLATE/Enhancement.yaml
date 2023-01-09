@@ -1,0 +1,23 @@
+name: New Enhancement
+title: "[Enhancement]: "
+description: Enhancement idea
+labels: ["backlog", "enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: textarea
+    id: possible_solutions
+    attributes:
+      label: Possible solutions
+    validations:
+      required: false
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimated time
+    validations:
+      required: false

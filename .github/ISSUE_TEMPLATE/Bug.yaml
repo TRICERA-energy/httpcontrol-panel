@@ -1,0 +1,30 @@
+name: Bug
+title: "[Bug]: "
+description: Report a bug.
+labels: ["backlog", "bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: textarea
+    id: possible_solutions
+    attributes:
+      label: Possible solutions
+    validations:
+      required: false
+  - type: textarea
+    id: log
+    attributes:
+      label: Logs
+      render: bash
+    validations:
+      required: true
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimated time
+    validations:
+      required: false
