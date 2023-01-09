@@ -2,7 +2,7 @@ version: '3.0'
 
 services:
   grafana:
-    container_name: 'triceraenergy-mqtt-panel'
+    container_name: 'triceraenergy-httpcontrol-panel'
     build:
       context: ./.config
       args:
@@ -10,5 +10,5 @@ services:
     ports:
       - 3000:3000/tcp
     volumes:
-      - ./dist:/var/lib/grafana/plugins/triceraenergy-mqtt-panel
+      - ./dist:/var/lib/grafana/plugins/triceraenergy-httpcontrol-panel
       - ./provisioning:/etc/grafana/provisioning
