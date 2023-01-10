@@ -1,11 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "panel",
-  "name": "MQTT Panel",
-  "id": "triceraenergy-mqtt-panel",
+  "name": "Tricera HTTP Control",
+  "id": "triceraenergy-httpcontrol-panel",
   "info": {
     "keywords": ["panel"],
-    "description": "Reimplementation of mqtt panel in react",
+    "description": "A panel to send post messages to a grafana app backend api.",
     "author": {
       "name": "Tricera energy"
     },

@@ -2,8 +2,8 @@ import React, { FormEvent, useState } from 'react';
 import { StandardEditorProps } from '@grafana/data';
 import { Button, ColorPickerInput, InlineField, Input } from '@grafana/ui';
 import { ControlProps, GroupProps } from 'types';
-import { Control } from 'components/Control';
-import { Collapsable } from 'components/Collapsable';
+import { Control } from '../components/Control';
+import { Collapsable } from '../components/Collapsable';
 import tinycolor from 'tinycolor2';
 
 export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value, onChange }) => {
@@ -35,9 +35,10 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
     groups[key].controls.push({
       type: 'button',
       name: 'NewControl',
-      publish: '',
+      postPath: '',
       values: ['', ''],
-      path: '',
+      payload: '',
+      listenPath: '',
       color: tinycolor(groups[key].color).lighten(10).toString(),
       icon: 'circle',
     });
