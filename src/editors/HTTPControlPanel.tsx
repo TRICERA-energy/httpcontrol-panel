@@ -68,17 +68,21 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
                 setSliderState(keyGroup, keyControl, Number(value));
               });
             });
-            setState(state => [...state]);
+            setState((state) => [...state]);
           } catch (error) {
             setError({ title: 'Listen', error: `${error}` });
           }
         })
         .catch((error) => {
-          setError({ title: 'Listen', error: `${error}` });
+          if (error.status && error.statusText) {
+            setError({ title: 'Listen', error: `${error.status} ${error.statusText}` });
+          } else {
+            setError({ title: 'Listen', error: `${error}` });
+          }
         });
     };
 
-    if (connection.listenPath) {
+    if (connection.listenPath && connection.listenPathEnabled) {
       const interval = setInterval(onListenPath, 1000);
 
       return () => {
@@ -86,7 +90,9 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
       };
     }
     return () => {};
-  });
+
+    // eslint-disable-next-line
+  }, [connection.listenPath, connection.listenPathEnabled]);
 
   useEffect(() => {
     setTabState([

@@ -5,50 +5,51 @@
 - [Description](#description)
 - [Installation](#installation)
 - [Settings](#settings)
-   - [Connection](#connection)
-   - [Groups](#groups)
-   - [Controls](#controls)
-      - [Button](#button)
-      - [Switch](#switch)
-      - [Text Input](#text-input)
-      - [Slider](#slider)
+  - [Connection](#connection)
+  - [Groups](#groups)
+  - [Controls](#controls)
+    - [Button](#button)
+    - [Switch](#switch)
+    - [Text Input](#text-input)
+    - [Slider](#slider)
 - [Panel](#panel)
 - [Development](#development)
 
 ## Description
 
-This panel plugin allows to publish data to a mqtt broker. 
-It is possible to define multiple groups with 
+This panel plugin allows to publish data to a grafana backend api.
+It is possible to define multiple groups with
 multiple controllers of type [Button](#button), [Switch](#switch),
 [Text Input](#text-input) and [Slider](#slider).
 
 ## Installation
 
 - Via the release binary:
-   
-   Download the latest [Release](https://github.com/TRICERA-energy/mqtt-panel/releases) and unzip it into the grafana plugin folder.
+
+  Download the latest [Release](https://github.com/TRICERA-energy/httpcontrol-panel/releases) and unzip it into the grafana plugin folder.
 
 - Build your own binaries:
 
-   You can build the binaries by yourself. 
-   1. Clone this repository to your grafana plugin folder.
-   2. Run `yarn` (Make sure you have nodejs and yarn installed)
-   3. Run `yarn build`
+  You can build the binaries by yourself.
+
+  1.  Clone this repository to your grafana plugin folder.
+  2.  Run `yarn` (Make sure you have nodejs and yarn installed)
+  3.  Run `yarn build`
 
 - Load the plugin directly into a grafana container
 
-   ```
-   docker run -d -p 3000:3000 -e "GF_INSTALL_PLUGINS=https://github.com/TRICERA-energy/mqtt-panel/releases/download/v1.0.0/triceraenergy-mqtt-panel-1.0.0.zip;mqtt-panel" --name=grafana grafana/grafana
-   ```
-
-
+  ```
+  docker run -d -p 3000:3000 -e "GF_INSTALL_PLUGINS=https://github.com/TRICERA-energy/httpcontrol-panel/releases/download/v1.0.0/triceraenergy-httpcontrol-panel-1.0.0.zip;httpcontrol-panel" --name=grafana grafana/grafana
+  ```
 
 ## Settings
+
 ### Connection
 
 ![](/doc/connection.png)
 
-**Note:** The password is hashed with the home directory to avoid clear password in the panel data. It does not make the panel more safety but avoids to have a clear password.
+Grafana backend plugin api is located under
+`api/plugins/<plugin-id>/resources/`
 
 ### Groups
 
@@ -60,29 +61,29 @@ A new group can be added via the `Add Group` button.
 
 ### Controls
 
-A new control can be added via the `Add Control` button. Beside the *Name*, *Color* and *Publish Topic* each control type has specific settings.
+A new control can be added via the `Add Control` button. Beside the _Name_, _Color_ and _Publish Topic_ each control type has specific settings.
 
 #### Button
 
-The button sends the given *Value* to the given *Publish Topic*. For more customization a icon provided by grafana can be selected.
+The button sends the given _Value_ to the given _POST PATH_. For more customization a icon provided by grafana can be selected.
 
 ![](/doc/button.png)
 
 #### Switch
 
-The switch sends the given *Value On* on true and then given *Value Off* on false. Switches also listen to the given *Subscribe Topic* and read there state from given *Listen Path*. This path should be a valid json path and the value should be boolean convertable.
+The switch sends the given _Value On_ on true and then given _Value Off_ on false. Switches also listen to the given _API Listen Path_ and read there state from given _Listen Path_. This path should be a valid json path and the value should be boolean convertable.
 
-Let's asume with get the following message from the given *Subscribe Topic*:
+Let's asume with get the following message from the given _API Listen Path_:
 
 ```json
 {
-   "switch": true,
-   "array": [true, false, false, true]
+  "switch": true,
+  "array": [true, false, false, true]
 }
 ```
 
-With a *Listen Path* of `switch` the state would be true.
-With a *Listen Path* of `array[1]` the state would be false.
+With a _Listen Path_ of `switch` the state would be true.
+With a _Listen Path_ of `array[1]` the state would be false.
 
 ![](/doc/switch.png)
 
@@ -94,15 +95,17 @@ Text input acts like a [Button](#button) control with the difference that you in
 
 #### Slider
 
-With the slider you can control a number range between *To* and *From* value. Like the [Switch](#switch) it listen to the given *Subscribe Topic* via a valid json path. The value should be number convertable.
+With the slider you can control a number range between _To_ and _From_ value. Like the [Switch](#switch) it listen the given _API Listen Path_ and read there state from given _Listen Path_. The value should be number convertable.
 
 ![](/doc/slider.png)
 
-## Panel 
-
-By default the panel contains one `Error` tab which shows the last 200 errors occuried within the panel and a label to show if the panel is still connected to the mqtt broker.
+## Panel
 
 ![](/doc/panel.png)
+
+By default the panel contains one `Error` tab which shows the last 200 errors occuried within the panel.
+
+![](/doc/panel-error.png)
 
 ## Development
 

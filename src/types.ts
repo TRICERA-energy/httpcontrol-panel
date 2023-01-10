@@ -7,6 +7,7 @@ export interface HTTPControlOptions {
 
 export interface ConnectionProps {
   listenPath: string;
+  listenPathEnabled: boolean;
 }
 
 export const availableControlIndex = {
