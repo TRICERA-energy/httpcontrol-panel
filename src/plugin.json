@@ -1,13 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "panel",
-  "name": "Tricera HTTP Control",
+  "name": "TRICERA HTTP Control Panel",
   "id": "triceraenergy-httpcontrol-panel",
   "info": {
     "keywords": ["panel"],
-    "description": "A panel to send post messages to a grafana app backend api.",
+    "description": "Panel to send HTTP post request to a grafana backend api via buttons, switches, textinput or sliders",
     "author": {
-      "name": "Tricera energy"
+      "name": "TRICERA-energy"
     },
     "logos": {
       "small": "img/logo.svg",
@@ -16,11 +16,11 @@
     "links": [
       {
         "name": "Website",
-        "url": "https://github.com/grafana/grafana-starter-panel"
+        "url": "https://github.com/TRICERA-energy/httpcontrol-panel"
       },
       {
         "name": "License",
-        "url": "https://github.com/grafana/grafana-starter-panel/blob/master/LICENSE"
+        "url": "https://github.com/TRICERA-energy/httpcontrol-panel/blob/master/LICENSE"
       }
     ],
     "screenshots": [],

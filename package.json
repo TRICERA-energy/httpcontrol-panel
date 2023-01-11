@@ -1,7 +1,7 @@
 {
-  "name": "mqtt-panel",
+  "name": "tricera-httpcontrol-panel",
   "version": "1.0.0",
-  "description": "Reimplementation and improved grafana mqtt panel (https://github.com/geeks-r-us/mqtt-panel) in react.",
+  "description": "Panel to send HTTP post request to a grafana backend api via buttons, switches, textinput or sliders",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
@@ -15,7 +15,7 @@
     "server": "docker-compose up --build",
     "prettier-fix": "prettier --write ."
   },
-  "author": "Tricera energy",
+  "author": "TRICERA-energy",
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7.16.7",
