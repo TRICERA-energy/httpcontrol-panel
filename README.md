@@ -65,15 +65,15 @@ A new control can be added via the `Add Control` button. Beside the _Name_, _Col
 
 #### Button
 
-The button sends the given _Value_ to the given _POST PATH_. For more customization a icon provided by grafana can be selected.
+The button sends the given _Value_ to the given _POST PATH_. For more customization an icon provided by grafana can be selected.
 
 ![](/doc/button.png)
 
 #### Switch
 
-The switch sends the given _Value On_ on true and then given _Value Off_ on false. Switches also listen to the given _API Listen Path_ and read there state from given _Listen Path_. This path should be a valid json path and the value should be boolean convertable.
+The switch sends the given _Value On_ on true and the given _Value Off_ on false. Switches also listen to the given _API Listen Path_ and read there state from given _Listen Path_. This path should be a valid json path and the value should be boolean convertable.
 
-Let's asume with get the following message from the given _API Listen Path_:
+Let's assume the following message is read from the _API Listen Path_:
 
 ```json
 {
@@ -82,7 +82,7 @@ Let's asume with get the following message from the given _API Listen Path_:
 }
 ```
 
-With a _Listen Path_ of `switch` the state would be true.
+If the _Listen Path_ is `switch` the state would be true.
 With a _Listen Path_ of `array[1]` the state would be false.
 
 ![](/doc/switch.png)
@@ -95,7 +95,7 @@ Text input acts like a [Button](#button) control with the difference that you in
 
 #### Slider
 
-With the slider you can control a number range between _To_ and _From_ value. Like the [Switch](#switch) it listen the given _API Listen Path_ and read there state from given _Listen Path_. The value should be number convertable.
+With the slider you can control a number range between _From_ and _To_ value. Like the [Switch](#switch) it listens to the given _API Listen Path_ and read there state from given _Listen Path_. The value should be number convertable.
 
 ![](/doc/slider.png)
 
