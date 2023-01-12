@@ -1,21 +1,13 @@
 import { IconName } from '@grafana/data';
-import { MqttClient } from 'mqtt';
 
-export interface MQTTOptions {
-  connection: ConnectionOptions;
+export interface HTTPControlOptions {
+  connection: ConnectionProps;
   groups: GroupProps[];
 }
 
-type Protocol = 'ws' | 'wss' | 'mqtt' | 'mqtts';
-
-export interface ConnectionOptions {
-  protocol: Protocol;
-  server: string;
-  port: string;
-  user: string;
-  password: string;
-  subscribe: string;
-  client: MqttClient;
+export interface ConnectionProps {
+  listenPath: string;
+  listenPathEnabled: boolean;
 }
 
 export const availableControlIndex = {
@@ -30,9 +22,10 @@ export type ControlType = keyof typeof availableControlIndex
 export interface ControlProps {
   type: ControlType;
   name: string;
-  publish: string;
+  postPath: string;
   values: string[];
-  path: string;
+  payload: string;
+  listenPath: string;
   color: string;
   icon: IconName;
 }

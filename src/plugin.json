@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "panel",
-  "name": "HTTP Control Panel",
+  "name": "TRICERA HTTP Control Panel",
   "id": "triceraenergy-httpcontrol-panel",
   "info": {
     "keywords": ["panel"],

@@ -198,7 +198,6 @@ const config = async (env): Promise<Configuration> => ({
     modules: [path.resolve(process.cwd(), 'src'), 'node_modules'],
     unsafeCache: true,
     fallback: {
-      os: require.resolve('os-browserify/browser'),
       url: require.resolve('url/'),
       buffer: require.resolve('buffer'),
     },

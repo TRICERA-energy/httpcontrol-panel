@@ -1,6 +1,6 @@
 import React, { FormEvent, useEffect, useState } from 'react';
 import { IconName, SelectableValue, toOption } from '@grafana/data';
-import { ColorPickerInput, InlineField, Input, Select } from '@grafana/ui';
+import { ColorPickerInput, InlineField, Input, Select, TextArea } from '@grafana/ui';
 import { availableControlIndex, ControlProps, ControlType } from 'types';
 import { Collapsable } from './Collapsable';
 import { IconPicker } from './IconPicker';
@@ -13,7 +13,7 @@ interface Props {
 
 export function Control({ value, onChange, onRemove }: Props) {
   const [control, setControl] = useState<ControlProps>(value);
-  const tooltip = getTooltips()
+  const tooltips = getTooltips();
 
   useEffect(() => {
     setControl(value);
@@ -27,7 +27,7 @@ export function Control({ value, onChange, onRemove }: Props) {
     }
   };
 
-  type OptionsName = 'name' | 'publish' | 'path';
+  type OptionsName = 'name' | 'postPath' | 'listenPath';
   const onChangeStringOption = (event: FormEvent<HTMLInputElement>, optionsName: OptionsName) => {
     control[optionsName] = event.currentTarget.value;
     setControl({ ...control });
@@ -35,6 +35,11 @@ export function Control({ value, onChange, onRemove }: Props) {
 
   const onChangeValue = (event: FormEvent<HTMLInputElement>, index: number) => {
     control.values[index] = event.currentTarget.value;
+    setControl({ ...control });
+  };
+
+  const onChangePayload = (event: FormEvent<HTMLTextAreaElement>) => {
+    control.payload = event.currentTarget.value;
     setControl({ ...control });
   };
 
@@ -71,7 +76,7 @@ export function Control({ value, onChange, onRemove }: Props) {
     <Collapsable
       label={
         <>
-          <b>control.name</b>
+          <b>{control.name}</b>
           <i>{' - (' + control.type + ')'}</i>
         </>
       }
@@ -97,18 +102,23 @@ export function Control({ value, onChange, onRemove }: Props) {
           <IconPicker icon={control.icon} onChange={onIconChange} />
         </InlineField>
       )}
-      <InlineField label={'Publish Topic'} labelWidth={14} grow={true}>
+      <InlineField label={'POST Path'} labelWidth={14} grow={true} tooltip={tooltips.postPath}>
         <Input
-          value={control.publish}
-          onChange={(event) => onChangeStringOption(event, 'publish')}
+          value={control.postPath}
+          onChange={(event) => onChangeStringOption(event, 'postPath')}
           onBlur={onBlur}
         />
       </InlineField>
       {(control.type === 'switch' || control.type === 'slider') && (
-        <InlineField label={'Listen Path'} labelWidth={14} grow={true} tooltip={tooltip.listenPath}>
+        <InlineField
+          label={'Listen Path'}
+          labelWidth={14}
+          grow={true}
+          tooltip={tooltips.listenPath}
+        >
           <Input
-            value={control.path}
-            onChange={(event) => onChangeStringOption(event, 'path')}
+            value={control.listenPath}
+            onChange={(event) => onChangeStringOption(event, 'listenPath')}
             onBlur={onBlur}
           ></Input>
         </InlineField>
@@ -119,7 +129,7 @@ export function Control({ value, onChange, onRemove }: Props) {
             value={control.values[0]}
             onChange={(event) => onChangeValue(event, 0)}
             onBlur={onBlur}
-          ></Input>
+          />
         </InlineField>
       )}
       {(control.type === 'switch' || control.type === 'slider') && (
@@ -128,18 +138,22 @@ export function Control({ value, onChange, onRemove }: Props) {
             value={control.values[1]}
             onChange={(event) => onChangeValue(event, 1)}
             onBlur={onBlur}
-          ></Input>
+          />
         </InlineField>
       )}
+      <InlineField label={'Payload'} labelWidth={14} grow={true} tooltip={tooltips.payload}>
+        <TextArea value={control.payload} onChange={onChangePayload} onBlur={onBlur} />
+      </InlineField>
     </Collapsable>
   );
 }
 
 function getTooltips() {
   return {
+    postPath: <p>A valid api path to POST the Value/Payload to.</p>,
     listenPath: (
       <p>
-        A valid path of an json object provided by the subscribe topic.
+        A valid path of an json object provided by the payload of api listen path.
         <br></br>
         <br></br>
         <b>JSON Value:</b>
@@ -158,19 +172,26 @@ function getTooltips() {
         </pre>
         <br></br>
         <b>Valid Paths:</b>
-          <p>
-            <code>object.switchValue</code>
-            <i>{'=> for a switch control.'}</i>
-          </p>
-          <p>
-            <code>object.sliderValue</code>
-            <i>{'=> for a slider control.'}</i>
-          </p>
-          <p>Explicit array paths are also supported.</p>
-          <p>
-            <code>object.array[1]</code>
-            <i>{'=> for a slider control.'}</i>
-          </p>
+        <p>
+          <code>object.switchValue</code>
+          <i>{'=> for a switch control.'}</i>
+        </p>
+        <p>
+          <code>object.sliderValue</code>
+          <i>{'=> for a slider control.'}</i>
+        </p>
+        <p>Explicit array paths are also supported.</p>
+        <p>
+          <code>object.array[1]</code>
+          <i>{'=> for a slider control.'}</i>
+        </p>
+      </p>
+    ),
+    payload: (
+      <p>
+        A payload wrapped around the value. The value will be insert for the placeholder{' '}
+        <i>$value</i>. If <i>$value</i> is not found, only the value without the payload will be
+        send
       </p>
     ),
   };

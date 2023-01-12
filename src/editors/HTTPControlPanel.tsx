@@ -1,27 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { PanelProps } from '@grafana/data';
-import { ControlProps, GroupProps, MQTTOptions } from 'types';
-import {
-  CustomScrollbar,
-  Icon,
-  InlineField,
-  InlineFieldRow,
-  Tab,
-  TabContent,
-  TabsBar,
-} from '@grafana/ui';
-import { get } from 'lodash';
-import { SwitchControl } from 'components/SwitchControl';
-import { ButtonControl } from 'components/ButtonControl';
-import { TextInputControl } from 'components/TextInputControl';
-import { ControlContainer } from 'components/ControlContainer';
-import { SliderControl } from 'components/SliderControl';
+import { ControlProps, GroupProps, HTTPControlOptions } from 'types';
+import { CustomScrollbar, Tab, TabContent, TabsBar } from '@grafana/ui';
+import { SwitchControl } from '../components/SwitchControl';
+import { ButtonControl } from '../components/ButtonControl';
+import { TextInputControl } from '../components/TextInputControl';
+import { ControlContainer } from '../components/ControlContainer';
+import { SliderControl } from '../components/SliderControl';
 import { css } from '@emotion/css';
-import { connectMQTT } from 'backend/mqttHandler';
-import { ErrorLog } from 'components/ErrorLog';
-import { setError } from 'backend/errorHandler';
+import { ErrorLog } from '../components/ErrorLog';
+import { setError } from '../backend/errorHandler';
+import { getBackendSrv } from '@grafana/runtime';
+import { get } from 'lodash';
 
-interface Props extends PanelProps<MQTTOptions> {}
+interface Props extends PanelProps<HTTPControlOptions> {}
 interface SwitchState {
   keyGroup: number;
   keyControl: number;
@@ -36,19 +28,71 @@ interface TabState {
   color: string;
 }
 
-export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
+export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
   const groups = options.groups;
   const connection = options.connection;
 
   const [state, setState] = useState<SwitchState[]>([]);
   const [tabState, setTabState] = useState<TabState[]>([]);
-  const [connected, setConnected] = useState<boolean>(false);
   const style = getStyle();
 
   useEffect(() => {
-    tryConnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const onListenPath = () => {
+      getBackendSrv()
+        .get(connection.listenPath)
+        .then((payload) => {
+          if (!payload) {
+            return;
+          }
+
+          try {
+            groups.forEach((group: GroupProps, keyGroup: number) => {
+              group.controls.forEach((control: ControlProps, keyControl: number) => {
+                if (
+                  (control.type !== 'switch' && control.type !== 'slider') ||
+                  !control.listenPath
+                ) {
+                  return;
+                }
+
+                const value = get(payload, control.listenPath);
+                if (value === undefined) {
+                  return;
+                }
+
+                if (control.type === 'switch') {
+                  setSwitchState(keyGroup, keyControl, Boolean(value));
+                  return;
+                }
+
+                setSliderState(keyGroup, keyControl, Number(value));
+              });
+            });
+            setState((state) => [...state]);
+          } catch (error) {
+            setError({ title: 'Listen', error: `${error}` });
+          }
+        })
+        .catch((error) => {
+          if (error.status && error.statusText) {
+            setError({ title: 'Listen', error: `${error.status} ${error.statusText}` });
+          } else {
+            setError({ title: 'Listen', error: `${error}` });
+          }
+        });
+    };
+
+    if (connection.listenPath && connection.listenPathEnabled) {
+      const interval = setInterval(onListenPath, 1000);
+
+      return () => {
+        clearInterval(interval);
+      };
+    }
+    return () => {};
+
+    // eslint-disable-next-line
+  }, [connection.listenPath, connection.listenPathEnabled]);
 
   useEffect(() => {
     setTabState([
@@ -60,23 +104,6 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
 
     return () => {};
   }, [groups]);
-
-  useEffect(() => {
-    if (connection.client.on) {
-      connection.client.on('message', onMessageMQTT);
-      connection.client.on('reconnect', onConnectionLost);
-      connection.client.on('connect', onConnect);
-    }
-
-    return () => {
-      if (connection.client.off) {
-        connection.client.off('message', onMessageMQTT);
-        connection.client.off('reconnect', onConnectionLost);
-        connection.client.off('connect', onConnect);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connection]);
 
   const findStateIndex = (keyGroup: number, keyControl: number): number => {
     return state.findIndex(
@@ -121,93 +148,62 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
     }
   };
 
-  const publishMQTT = (publish: string, value: string) => {
-    if (publish) {
-      connection.client.publish(publish, value, (error: Error | undefined) => {
+  const post = (path: string, value: string, payload: string) => {
+    if (!path) {
+      setError({ title: 'POST', error: 'Can not POST to empty api url!' });
+      return;
+    }
+
+    if (payload) {
+      const tmpValue = payload.replace('$value', value);
+
+      if (tmpValue !== payload) {
+        // hacky way to make json compact
+        value = JSON.stringify(JSON.parse(tmpValue));
+      } else {
+        setError({
+          title: 'Payload',
+          error:
+            'Did not find placeHolder $value in the payload string. Fallback to send only value.',
+        });
+      }
+    }
+
+    getBackendSrv()
+      .post(path, value)
+      .catch((error) => {
         if (error) {
-          setError({ title: 'Publish', error: error.toString() });
+          setError({ title: 'POST', error: error.toString() });
         }
       });
-    } else {
-      setError({ title: 'Publish', error: 'Can not publish to empty topic!' });
-    }
   };
 
   const onToggleSwitch = (
-    publish: string,
+    path: string,
     keyGroup: number,
     keyControl: number,
-    values: string[]
+    values: string[],
+    payload: string
   ) => {
     const newState = setSwitchState(keyGroup, keyControl);
     setState([...state]);
-    publishMQTT(publish, values[newState ? 1 : 0]);
+    post(path, values[newState ? 1 : 0], payload);
   };
 
-  const onSliderChange = (publish: string, keyGroup: number, keyControl: number, value: number) => {
+  const onSliderChange = (
+    path: string,
+    keyGroup: number,
+    keyControl: number,
+    value: number,
+    payload: string
+  ) => {
     setSliderState(keyGroup, keyControl, value);
     setState([...state]);
-    publishMQTT(publish, String(value));
-  };
-
-  const onMessageMQTT = (topic: string, message: string) => {
-    if (topic !== connection.subscribe) {
-      return;
-    }
-
-    if (!message) {
-      return;
-    }
-
-    try {
-      const obj = JSON.parse(message);
-      groups.forEach((group: GroupProps, keyGroup: number) => {
-        group.controls.forEach((control: ControlProps, keyControl: number) => {
-          if (control.type !== 'switch' && control.type !== 'slider') {
-            return;
-          }
-
-          const value = get(obj, control.path);
-          if (value === undefined) {
-            return;
-          }
-
-          if (control.type === 'switch') {
-            setSwitchState(keyGroup, keyControl, Boolean(value));
-            return;
-          }
-
-          setSliderState(keyGroup, keyControl, Number(value));
-        });
-      });
-      setState([...state]);
-    } catch (error) {
-      setError({title: 'Subscribe', error: `${error}`})
-    }
-  };
-
-  const onConnectionLost = () => {
-    setConnected(false);
-  };
-
-  const onConnect = () => {
-    setConnected(true);
-  };
-
-  const tryConnect = () => {
-    if (connection.server) {
-      connection.client = connectMQTT(connection);
-    }
-    onOptionsChange(options);
+    post(path, String(value), payload);
   };
 
   return (
     <>
-      <InlineFieldRow>
-        <InlineField label={'Connected'} labelWidth={10} className={style.connected} grow={true}>
-          <Icon name={connected ? 'check' : 'fa fa-spinner'} />
-        </InlineField>
-      </InlineFieldRow>
       <TabsBar>
         {tabState.map((tab, index) => {
           return (
@@ -243,7 +239,9 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
                               >
                                 <ButtonControl
                                   control={control}
-                                  onClick={() => publishMQTT(control.publish, control.values[0])}
+                                  onClick={() =>
+                                    post(control.postPath, control.values[0], control.payload)
+                                  }
                                 />
                               </ControlContainer>
                             );
@@ -258,10 +256,11 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
                                   state={getSwitchState(keyGroup, keyControl)}
                                   onToggle={() =>
                                     onToggleSwitch(
-                                      control.publish,
+                                      control.postPath,
                                       keyGroup,
                                       keyControl,
-                                      control.values
+                                      control.values,
+                                      control.payload
                                     )
                                   }
                                 />
@@ -276,7 +275,9 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
                               >
                                 <TextInputControl
                                   control={control}
-                                  onSend={(value: string) => publishMQTT(control.publish, value)}
+                                  onSend={(value: string) =>
+                                    post(control.postPath, value, control.payload)
+                                  }
                                 />
                               </ControlContainer>
                             );
@@ -291,7 +292,13 @@ export const MQTTPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
                                   state={getSliderState(keyGroup, keyControl)}
                                   control={control}
                                   onChange={(value: number) =>
-                                    onSliderChange(control.publish, keyGroup, keyControl, value)
+                                    onSliderChange(
+                                      control.postPath,
+                                      keyGroup,
+                                      keyControl,
+                                      value,
+                                      control.payload
+                                    )
                                   }
                                 />
                               </ControlContainer>

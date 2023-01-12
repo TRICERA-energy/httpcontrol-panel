@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import { getErrorEventEmitter, getErrors } from 'backend/errorHandler';
+import { getErrorEventEmitter, getErrors } from '../backend/errorHandler';
 import React, { useEffect, useState } from 'react';
 import { ErrorProps } from 'types';
 
