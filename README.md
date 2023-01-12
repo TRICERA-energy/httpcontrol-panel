@@ -1,4 +1,4 @@
-# MQTT Panel
+# HTTP Control Panel
 
 ## Index
 
