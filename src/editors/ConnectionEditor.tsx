@@ -30,7 +30,7 @@ export const ConnectionEditor: React.FC<StandardEditorProps<ConnectionProps>> = 
     <>
       <InlineField
         label={'API Listen Path'}
-        labelWidth={16}
+        labelWidth={18}
         grow={true}
         tooltip={tooltips.apiListenPath}
       >
