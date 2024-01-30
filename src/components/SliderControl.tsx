@@ -5,26 +5,27 @@ import React, { useState } from 'react';
 import { ControlProps } from 'types';
 
 interface Props {
+  disabled: boolean;
   state: number;
   control: ControlProps;
   onChange: (value: number) => void;
 }
 
-export function SliderControl({ state, control, onChange }: Props) {
+export function SliderControl({ state, control, disabled, onChange }: Props) {
   const style = getStyle();
-  const min = Number(control.values[0])
-  const max = Number(control.values[1])
+  const min = Number(control.values[0]);
+  const max = Number(control.values[1]);
 
   const [text, setText] = useState<string>(String(state));
 
   const onAfterChange = (value: number | number[]) => {
     if (value !== undefined) {
       let tmpValue = Array.isArray(value) ? value[0] : value;
-      
+
       if (tmpValue < min) {
-        tmpValue = min
+        tmpValue = min;
       } else if (tmpValue > max) {
-        tmpValue = max
+        tmpValue = max;
       }
 
       setText(String(tmpValue));
@@ -34,13 +35,14 @@ export function SliderControl({ state, control, onChange }: Props) {
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      onAfterChange(Number(event.currentTarget.value))
+      onAfterChange(Number(event.currentTarget.value));
     }
-  }
+  };
 
   return (
     <div className={style.container}>
       <Slider
+        disabled={disabled}
         className={style.slider}
         value={state}
         min={min}
@@ -48,6 +50,7 @@ export function SliderControl({ state, control, onChange }: Props) {
         onChange={onAfterChange}
       />
       <Input
+        disabled={disabled}
         className={style.input}
         value={text}
         type={'number'}

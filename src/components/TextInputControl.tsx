@@ -5,35 +5,40 @@ import { css } from '@emotion/css';
 import { ButtonControl } from './ButtonControl';
 
 interface Props {
+  disabled: boolean;
   control: ControlProps;
   onSend: (value: string) => void;
 }
 
-export function TextInputControl({ control, onSend }: Props) {
+export function TextInputControl({ control, disabled, onSend }: Props) {
   const [textInput, setTextInput] = useState<string>('');
   const style = getStyle(control.color);
 
   const onSendText = (text: string) => {
-    onSend(text)
-    setTextInput('')
-  }
+    onSend(text);
+    setTextInput('');
+  };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      onSendText(event.currentTarget.value)
+      onSendText(event.currentTarget.value);
     }
-  }
+  };
 
   return (
-      <div className={style.container}>
-        <Input
-          value={textInput}
-          onKeyDown={onKeyDown}
-          onChange={(event) => setTextInput(event.currentTarget.value)}
-          className={style.input}
-        />
-        <ButtonControl control={{...control, icon: 'arrow-right'}} onClick={() => onSendText(textInput)} />
-      </div>
+    <div className={style.container}>
+      <Input
+        value={textInput}
+        onKeyDown={onKeyDown}
+        onChange={(event) => setTextInput(event.currentTarget.value)}
+        className={style.input}
+      />
+      <ButtonControl
+        disabled={disabled}
+        control={{ ...control, icon: 'arrow-right' }}
+        onClick={() => onSendText(textInput)}
+      />
+    </div>
   );
 }
 

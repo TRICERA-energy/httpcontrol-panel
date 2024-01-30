@@ -35,10 +35,8 @@ export const GroupEditor: React.FC<StandardEditorProps<GroupProps[]>> = ({ value
     groups[key].controls.push({
       type: 'button',
       name: 'NewControl',
-      postPath: '',
       values: ['', ''],
-      payload: '',
-      listenPath: '',
+      query: '',
       color: tinycolor(groups[key].color).lighten(10).toString(),
       icon: 'circle',
     });

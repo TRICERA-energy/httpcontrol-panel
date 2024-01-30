@@ -27,7 +27,7 @@ export function Control({ value, onChange, onRemove }: Props) {
     }
   };
 
-  type OptionsName = 'name' | 'postPath' | 'listenPath';
+  type OptionsName = 'name';
   const onChangeStringOption = (event: FormEvent<HTMLInputElement>, optionsName: OptionsName) => {
     control[optionsName] = event.currentTarget.value;
     setControl({ ...control });
@@ -38,8 +38,8 @@ export function Control({ value, onChange, onRemove }: Props) {
     setControl({ ...control });
   };
 
-  const onChangePayload = (event: FormEvent<HTMLTextAreaElement>) => {
-    control.payload = event.currentTarget.value;
+  const onChangeQuery = (event: FormEvent<HTMLTextAreaElement>) => {
+    control.query = event.currentTarget.value;
     setControl({ ...control });
   };
 
@@ -102,27 +102,6 @@ export function Control({ value, onChange, onRemove }: Props) {
           <IconPicker icon={control.icon} onChange={onIconChange} />
         </InlineField>
       )}
-      <InlineField label={'POST Path'} labelWidth={14} grow={true} tooltip={tooltips.postPath}>
-        <Input
-          value={control.postPath}
-          onChange={(event) => onChangeStringOption(event, 'postPath')}
-          onBlur={onBlur}
-        />
-      </InlineField>
-      {(control.type === 'switch' || control.type === 'slider') && (
-        <InlineField
-          label={'Listen Path'}
-          labelWidth={14}
-          grow={true}
-          tooltip={tooltips.listenPath}
-        >
-          <Input
-            value={control.listenPath}
-            onChange={(event) => onChangeStringOption(event, 'listenPath')}
-            onBlur={onBlur}
-          ></Input>
-        </InlineField>
-      )}
       {control.type !== 'input' && (
         <InlineField label={getValueLabel(control.type, 0)} labelWidth={14} grow={true}>
           <Input
@@ -141,8 +120,8 @@ export function Control({ value, onChange, onRemove }: Props) {
           />
         </InlineField>
       )}
-      <InlineField label={'Payload'} labelWidth={14} grow={true} tooltip={tooltips.payload}>
-        <TextArea value={control.payload} onChange={onChangePayload} onBlur={onBlur} />
+      <InlineField label={'Query'} labelWidth={14} grow={true} tooltip={tooltips.query}>
+        <TextArea value={control.query} onChange={onChangeQuery} onBlur={onBlur} />
       </InlineField>
     </Collapsable>
   );
@@ -150,44 +129,7 @@ export function Control({ value, onChange, onRemove }: Props) {
 
 function getTooltips() {
   return {
-    postPath: <p>A valid api path to POST the Value/Payload to.</p>,
-    listenPath: (
-      <p>
-        A valid path of an json object provided by the payload of api listen path.
-        <br></br>
-        <br></br>
-        <b>JSON Value:</b>
-        <pre>
-          <code>
-            {[
-              '{',
-              '  "object": {',
-              '     "switchValue": true,',
-              '     "sliderValue": 50,',
-              '     "array": [0, 1, 2, 3]',
-              '  }',
-              '}',
-            ].join('\n')}
-          </code>
-        </pre>
-        <br></br>
-        <b>Valid Paths:</b>
-        <p>
-          <code>object.switchValue</code>
-          <i>{'=> for a switch control.'}</i>
-        </p>
-        <p>
-          <code>object.sliderValue</code>
-          <i>{'=> for a slider control.'}</i>
-        </p>
-        <p>Explicit array paths are also supported.</p>
-        <p>
-          <code>object.array[1]</code>
-          <i>{'=> for a slider control.'}</i>
-        </p>
-      </p>
-    ),
-    payload: (
+    query: (
       <p>
         A payload wrapped around the value. The value will be insert for the placeholder{' '}
         <i>$value</i>. If <i>$value</i> is not found, only the value without the payload will be

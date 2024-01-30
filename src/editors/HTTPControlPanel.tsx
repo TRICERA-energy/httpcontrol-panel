@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PanelProps } from '@grafana/data';
+import { PanelProps, AppEvents, DataQueryResponseData } from '@grafana/data';
 import { ControlProps, GroupProps, HTTPControlOptions } from 'types';
 import { CustomScrollbar, Tab, TabContent, TabsBar } from '@grafana/ui';
 import { SwitchControl } from '../components/SwitchControl';
@@ -10,8 +10,8 @@ import { SliderControl } from '../components/SliderControl';
 import { css } from '@emotion/css';
 import { ErrorLog } from '../components/ErrorLog';
 import { setError } from '../backend/errorHandler';
-import { getBackendSrv } from '@grafana/runtime';
-import { get } from 'lodash';
+import { getAppEvents, getBackendSrv, getDataSourceSrv } from '@grafana/runtime';
+import { lastValueFrom } from 'rxjs';
 
 interface Props extends PanelProps<HTTPControlOptions> {}
 interface SwitchState {
@@ -28,71 +28,14 @@ interface TabState {
   color: string;
 }
 
-export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) => {
+export const HTTPControlPanel: React.FC<Props> = ({ options, replaceVariables }) => {
   const groups = options.groups;
-  const connection = options.connection;
+  const datasource = options.datasource;
 
   const [state, setState] = useState<SwitchState[]>([]);
   const [tabState, setTabState] = useState<TabState[]>([]);
+  const [disabled, setDisabled] = useState<boolean>(false);
   const style = getStyle();
-
-  useEffect(() => {
-    const onListenPath = () => {
-      getBackendSrv()
-        .get(connection.listenPath)
-        .then((payload) => {
-          if (!payload) {
-            return;
-          }
-
-          try {
-            groups.forEach((group: GroupProps, keyGroup: number) => {
-              group.controls.forEach((control: ControlProps, keyControl: number) => {
-                if (
-                  (control.type !== 'switch' && control.type !== 'slider') ||
-                  !control.listenPath
-                ) {
-                  return;
-                }
-
-                const value = get(payload, control.listenPath);
-                if (value === undefined) {
-                  return;
-                }
-
-                if (control.type === 'switch') {
-                  setSwitchState(keyGroup, keyControl, Boolean(value));
-                  return;
-                }
-
-                setSliderState(keyGroup, keyControl, Number(value));
-              });
-            });
-            setState((state) => [...state]);
-          } catch (error) {
-            setError({ title: 'Listen', error: `${error}` });
-          }
-        })
-        .catch((error) => {
-          if (error.status && error.statusText) {
-            setError({ title: 'Listen', error: `${error.status} ${error.statusText}` });
-          } else {
-            setError({ title: 'Listen', error: `${error}` });
-          }
-        });
-    };
-
-    if (connection.listenPath && connection.listenPathEnabled) {
-      const interval = setInterval(onListenPath, 1000);
-
-      return () => {
-        clearInterval(interval);
-      };
-    }
-    return () => {};
-
-    // eslint-disable-next-line
-  }, [connection.listenPath, connection.listenPathEnabled]);
 
   useEffect(() => {
     setTabState([
@@ -148,38 +91,55 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
     }
   };
 
-  const post = (path: string, value: string, payload: string) => {
-    if (!path) {
-      setError({ title: 'POST', error: 'Can not POST to empty api url!' });
-      return;
-    }
+  const callQuery = async (name: string, value: string, query: string) => {
+    setDisabled(true);
+    let tmpValue = replaceVariables(query || '{}');
+    tmpValue = tmpValue.replace('__VALUE__', value);
+    const payload = JSON.parse(tmpValue);
 
-    if (payload) {
-      const tmpValue = payload.replace('$value', value);
-
-      if (tmpValue !== payload) {
-        // hacky way to make json compact
-        value = JSON.stringify(JSON.parse(tmpValue));
-      } else {
-        setError({
-          title: 'Payload',
-          error:
-            'Did not find placeHolder $value in the payload string. Fallback to send only value.',
-        });
-      }
-    }
-
-    getBackendSrv()
-      .post(path, value)
-      .catch((error) => {
-        if (error) {
-          setError({ title: 'POST', error: error.toString() });
-        }
+    const ds = await getDataSourceSrv().get(datasource.datasource);
+    const appEvents = getAppEvents();
+    try {
+      const obs = await getBackendSrv().fetch<DataQueryResponseData>({
+        method: 'POST',
+        url: 'api/ds/query',
+        data: {
+          queries: [
+            {
+              datasource: {
+                uid: ds.uid,
+              },
+              refId: '1',
+              ...payload,
+            },
+          ],
+        },
       });
+
+      const resp = await lastValueFrom<DataQueryResponseData>(obs);
+      const msg = resp.data.results[1].frames[0].data.values[0][0];
+
+      appEvents.publish({
+        type: AppEvents.alertSuccess.name,
+        payload: [name + ': ' + msg['success'] + ' (' + msg['message'] + ')'],
+      });
+    } catch (error: any) {
+      setError({
+        title: `publish of ${name} failed`,
+        error: error.data.message,
+        timestamp: Date().toString(),
+      });
+      appEvents.publish({
+        type: AppEvents.alertError.name,
+        payload: [name + ': ' + error.status + ' (' + error.statusText + ') ' + error.data.message],
+      });
+    }
+
+    setDisabled(false);
   };
 
   const onToggleSwitch = (
-    path: string,
+    name: string,
     keyGroup: number,
     keyControl: number,
     values: string[],
@@ -187,11 +147,11 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
   ) => {
     const newState = setSwitchState(keyGroup, keyControl);
     setState([...state]);
-    post(path, values[newState ? 1 : 0], payload);
+    callQuery(name, values[newState ? 1 : 0], payload);
   };
 
   const onSliderChange = (
-    path: string,
+    name: string,
     keyGroup: number,
     keyControl: number,
     value: number,
@@ -199,7 +159,7 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
   ) => {
     setSliderState(keyGroup, keyControl, value);
     setState([...state]);
-    post(path, String(value), payload);
+    callQuery(name, String(value), payload);
   };
 
   return (
@@ -238,9 +198,10 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
                                 labelWidth={group.labelWidth}
                               >
                                 <ButtonControl
+                                  disabled={disabled}
                                   control={control}
                                   onClick={() =>
-                                    post(control.postPath, control.values[0], control.payload)
+                                    callQuery(control.name, control.values[0], control.query)
                                   }
                                 />
                               </ControlContainer>
@@ -253,14 +214,15 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
                                 labelWidth={group.labelWidth}
                               >
                                 <SwitchControl
+                                  disabled={disabled}
                                   state={getSwitchState(keyGroup, keyControl)}
                                   onToggle={() =>
                                     onToggleSwitch(
-                                      control.postPath,
+                                      control.name,
                                       keyGroup,
                                       keyControl,
                                       control.values,
-                                      control.payload
+                                      control.query
                                     )
                                   }
                                 />
@@ -274,9 +236,10 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
                                 labelWidth={group.labelWidth}
                               >
                                 <TextInputControl
+                                  disabled={disabled}
                                   control={control}
                                   onSend={(value: string) =>
-                                    post(control.postPath, value, control.payload)
+                                    callQuery(control.name, value, control.query)
                                   }
                                 />
                               </ControlContainer>
@@ -289,15 +252,16 @@ export const HTTPControlPanel: React.FC<Props> = ({ options, onOptionsChange }) 
                                 labelWidth={group.labelWidth}
                               >
                                 <SliderControl
+                                  disabled={disabled}
                                   state={getSliderState(keyGroup, keyControl)}
                                   control={control}
                                   onChange={(value: number) =>
                                     onSliderChange(
-                                      control.postPath,
+                                      control.name,
                                       keyGroup,
                                       keyControl,
                                       value,
-                                      control.payload
+                                      control.query
                                     )
                                   }
                                 />

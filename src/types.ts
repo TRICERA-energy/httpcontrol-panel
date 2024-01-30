@@ -1,31 +1,28 @@
 import { IconName } from '@grafana/data';
 
 export interface HTTPControlOptions {
-  connection: ConnectionProps;
+  datasource: DatasourceProps;
   groups: GroupProps[];
 }
 
-export interface ConnectionProps {
-  listenPath: string;
-  listenPathEnabled: boolean;
+export interface DatasourceProps {
+  datasource?: string;
 }
 
 export const availableControlIndex = {
-  'button': true,
-  'switch': true,
-  'input': true,
-  'slider': true,
-}
+  button: true,
+  switch: true,
+  input: true,
+  slider: true,
+};
 
-export type ControlType = keyof typeof availableControlIndex
+export type ControlType = keyof typeof availableControlIndex;
 
 export interface ControlProps {
   type: ControlType;
   name: string;
-  postPath: string;
   values: string[];
-  payload: string;
-  listenPath: string;
+  query: string;
   color: string;
   icon: IconName;
 }
@@ -34,7 +31,7 @@ export interface GroupProps {
   name: string;
   controls: ControlProps[];
   color: string;
-  labelWidth: number
+  labelWidth: number;
 }
 
 export interface ErrorProps {

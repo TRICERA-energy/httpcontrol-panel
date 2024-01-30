@@ -1,22 +1,20 @@
-import { css } from "@emotion/css";
-import { Button, Icon } from "@grafana/ui";
-import React from "react";
-import { ControlProps } from "types";
+import { css } from '@emotion/css';
+import { Button, Icon } from '@grafana/ui';
+import React from 'react';
+import { ControlProps } from 'types';
 
 interface Props {
-  control: ControlProps
-  onClick: () => void
+  disabled: boolean;
+  control: ControlProps;
+  onClick: () => void;
 }
 
-export function ButtonControl({control, onClick}: Props) {
-  const style = getStyle()
+export function ButtonControl({ control, disabled, onClick }: Props) {
+  const style = getStyle();
 
   return (
-      <Button
-      variant={'secondary'}
-      onClick={onClick}
-      className={style.button}
-    ><Icon name={control.icon}/>
+    <Button disabled={disabled} variant={'secondary'} onClick={onClick} className={style.button}>
+      <Icon name={control.icon} />
     </Button>
   );
 }
@@ -26,5 +24,5 @@ function getStyle() {
     button: css`
       justify-content: center;
     `,
-  }
+  };
 }
